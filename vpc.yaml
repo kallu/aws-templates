@@ -1,0 +1,503 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC network v1.0
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: Network address space
+        Parameters:
+          - VpcCidr
+          - PubCidrA
+          - PubCidrB
+          - PubCidrC
+          - PrivCidrA
+          - PrivCidrB
+          - PrivCidrC
+      -
+        Label:
+          default: NAT configuration
+        Parameters:
+          - EipDeletionPolicy
+
+      -
+        Label:
+          default: DNS configuration
+        Parameters:
+          - InternalZone
+
+Parameters:
+  VpcCidr:
+    Type: String
+    Description: VPC
+    Default: "10.0.0.0/21"
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+  PubCidrA:
+    Type: String
+    Description: Public Subnet A
+    Default: "10.0.0.0/24"
+    AllowedPattern: '(((\d{1,3})\.){3}\d{1,3}/\d{1,2}){0,1}'
+  PubCidrB:
+    Type: String
+    Description: Public Subnet B
+    Default: ""
+    AllowedPattern: '(((\d{1,3})\.){3}\d{1,3}/\d{1,2}){0,1}'
+  PubCidrC:
+    Type: String
+    Description: Public Subnet C
+    Default: ""
+    AllowedPattern: '(((\d{1,3})\.){3}\d{1,3}/\d{1,2}){0,1}'
+  PrivCidrA:
+    Type: String
+    Description: Private Subnet A
+    Default: "10.0.1.0/24"
+    AllowedPattern: '(((\d{1,3})\.){3}\d{1,3}/\d{1,2}){0,1}'
+  PrivCidrB:
+    Type: String
+    Description: Private Subnet B
+    Default: ""
+    AllowedPattern: '(((\d{1,3})\.){3}\d{1,3}/\d{1,2}){0,1}'
+  PrivCidrC:
+    Type: String
+    Description: Private Subnet C
+    Default: ""
+    AllowedPattern: '(((\d{1,3})\.){3}\d{1,3}/\d{1,2}){0,1}'
+  EipDeletionPolicy:
+    Type: String
+    Description: Delete or retain Elastic IPs after stack termination
+    Default: Delete
+    AllowedValues: [ Delete, Retain ]
+  InternalZone:
+    Type: String
+    Description: Name of Route53 VPC internal zone
+    Default: vpc.internal
+
+Conditions:
+  PubA: !Not [!Equals [!Ref PubCidrA, "" ]]
+  PubB: !Not [!Equals [!Ref PubCidrB, "" ]]
+  PubC: !Not [!Equals [!Ref PubCidrC, "" ]]
+  PubAny: !Or [ Condition: PubA, Condition: PubB, Condition: PubC ]
+  PrivA: !Not [!Equals [!Ref PrivCidrA, "" ]]
+  PrivB: !Not [!Equals [!Ref PrivCidrB, "" ]]
+  PrivC: !Not [!Equals [!Ref PrivCidrC, "" ]]
+  PrivAny: !Or [ Condition: PrivA, Condition: PrivB, Condition: PrivC ]
+  NatA: !And [ Condition: PubA, Condition: PrivA ]
+  DeleteEipA: !And [ Condition: NatA, !Equals [ !Ref EipDeletionPolicy, "Delete" ] ]
+  KeepEipA: !And [ Condition: NatA, !Not [ Condition: DeleteEipA ] ]
+  NatB: !And [ Condition: PubB, Condition: PrivB ]
+  DeleteEipB: !And [ Condition: NatB, !Equals [ !Ref EipDeletionPolicy, "Delete" ] ]
+  KeepEipB: !And [ Condition: NatB, !Not [ Condition: DeleteEipB ] ]
+  NatC: !And [ Condition: PubC, Condition: PrivC ]
+  DeleteEipC: !And [ Condition: NatC, !Equals [ !Ref EipDeletionPolicy, "Delete" ] ]
+  KeepEipC: !And [ Condition: NatC, !Not [ Condition: DeleteEipC ] ]
+  HasIntZone: !Not [!Equals [!Ref InternalZone, "" ]]
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+
+  InetGW:
+    Type: AWS::EC2::InternetGateway
+    Condition: PubAny
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName} Inet-GW'
+
+  InetGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: PubAny
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InetGW
+
+  InternalDnsZone:
+    Type: AWS::Route53::HostedZone
+    Condition: HasIntZone
+    Properties:
+      VPCs:
+        - VPCId: !Ref VPC
+          VPCRegion: !Ref AWS::Region
+      Name: !Ref InternalZone
+      HostedZoneConfig:
+        Comment: !Sub '${AWS::StackName} @ ${AWS::Region} internal zone'
+
+  VpnGW:
+    Type: AWS::EC2::VPNGateway
+    Condition: PrivAny
+    Properties:
+      Type: ipsec.1
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} VPN-GW'
+
+  VpnGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: PrivAny
+    Properties:
+       VpcId: !Ref VPC
+       VpnGatewayId: !Ref VpnGW
+
+  VpnGWrouting:
+    Type: AWS::EC2::VPNGatewayRoutePropagation
+    Condition: PrivAny
+    DependsOn: VpnGWattachment
+    Properties:
+      VpnGatewayId: !Ref VpnGW
+      RouteTableIds:
+      - !If
+        - PrivA
+        - !Ref PrivRouteTableA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivRouteTableB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivRouteTableC
+        - !Ref AWS::NoValue
+
+  S3vpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcId: !Ref VPC
+      RouteTableIds:
+      - !If
+        - PubAny
+        - !Ref PubRouteTable
+        - !Ref AWS::NoValue
+      - !If
+        - PrivA
+        - !Ref PrivRouteTableA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivRouteTableB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivRouteTableC
+        - !Ref AWS::NoValue
+
+  PubSubnetA:
+    Type: AWS::EC2::Subnet
+    Condition: PubA
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref PubCidrA
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public subnet-A'
+
+  PubSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PubA
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref PubSubnetA
+
+  NatGwA:
+    Type: AWS::EC2::NatGateway
+    Condition: NatA
+    Properties:
+      SubnetId: !Ref PubSubnetA
+      AllocationId: !GetAtt
+        - NatEipA
+        - AllocationId
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-A'
+
+  NatEipA:
+    Type: AWS::EC2::EIP
+    Condition: KeepEipA
+    DeletionPolicy: Retain
+    Properties:
+      Domain: vpc
+
+  NatEipA:
+    Type: AWS::EC2::EIP
+    Condition: DeleteEipA
+    DeletionPolicy: Delete
+    Properties:
+      Domain: vpc
+
+  PubSubnetB:
+    Type: AWS::EC2::Subnet
+    Condition: PubB
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref PubCidrB
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public subnet-B'
+
+  PubSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PubB
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref PubSubnetB
+
+  NatGwB:
+    Type: AWS::EC2::NatGateway
+    Condition: NatB
+    Properties:
+      SubnetId: !Ref PubSubnetB
+      AllocationId: !GetAtt
+        - NatEipB
+        - AllocationId
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-B'
+
+  NatEipB:
+    Type: AWS::EC2::EIP
+    Condition: KeepEipB
+    DeletionPolicy: Retain
+    Properties:
+      Domain: vpc
+
+  NatEipB:
+    Type: AWS::EC2::EIP
+    Condition: DeleteEipB
+    DeletionPolicy: Delete
+    Properties:
+      Domain: vpc
+
+  PubSubnetC:
+    Type: AWS::EC2::Subnet
+    Condition: PubC
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref PubCidrC
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public subnet-C'
+
+  PubSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PubC
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref PubSubnetC
+
+  NatGwC:
+    Type: AWS::EC2::NatGateway
+    Condition: NatC
+    Properties:
+      SubnetId: !Ref PubSubnetC
+      AllocationId: !GetAtt
+        - NatEipC
+        - AllocationId
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-C'
+
+  NatEipC:
+    Type: AWS::EC2::EIP
+    Condition: KeepEipC
+    DeletionPolicy: Retain
+    Properties:
+      Domain: vpc
+
+  NatEipC:
+    Type: AWS::EC2::EIP
+    Condition: DeleteEipC
+    DeletionPolicy: Retain
+    Properties:
+      Domain: vpc
+
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: PubAny
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public route-table'
+
+  PubDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: PubAny
+    DependsOn: InetGW
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+
+  PrivSubnetA:
+    Type: AWS::EC2::Subnet
+    Condition: PrivA
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref PrivCidrA
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private subnet-A'
+
+  PrivRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Condition: PrivA
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private route-table-A'
+
+  PrivSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PrivA
+    Properties:
+      RouteTableId: !Ref PrivRouteTableA
+      SubnetId: !Ref PrivSubnetA
+
+  PrivDefaultRouteA:
+    Type: AWS::EC2::Route
+    Condition: NatA
+    DependsOn: NatGwA
+    Properties:
+      RouteTableId: !Ref PrivRouteTableA
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwA 
+
+  PrivSubnetB:
+    Type: AWS::EC2::Subnet
+    Condition: PrivB
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref PrivCidrB
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private subnet-B'
+
+  PrivRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Condition: PrivB
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private route-table-B'
+
+  PrivSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PrivB
+    Properties:
+      RouteTableId: !Ref PrivRouteTableB
+      SubnetId: !Ref PrivSubnetB
+
+  PrivDefaultRouteB:
+    Type: AWS::EC2::Route
+    Condition: NatB
+    DependsOn: NatGwB
+    Properties:
+      RouteTableId: !Ref PrivRouteTableB
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwB
+
+  PrivSubnetC:
+    Type: AWS::EC2::Subnet
+    Condition: PrivC
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref PrivCidrC
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private subnet-C'
+
+  PrivRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Condition: PrivC
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private route-table-C'
+
+  PrivSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PrivC
+    Properties:
+      RouteTableId: !Ref PrivRouteTableC
+      SubnetId: !Ref PrivSubnetC
+
+  PrivDefaultRouteC:
+    Type: AWS::EC2::Route
+    Condition: NatC
+    DependsOn: NatGwC
+    Properties:
+      RouteTableId: !Ref PrivRouteTableC
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwC
+
+Outputs:
+
+  VpcId:
+    Description: VPC ID
+    Value: !Ref VPC
+
+  PubSubnetAId:
+    Description: Public Subnet A
+    Value: !If
+      - PubA
+      - !Ref PubSubnetA
+      - ""
+
+  PubSubnetBId:
+    Description: Public Subnet B
+    Value: !If
+      - PubB
+      - !Ref PubSubnetB
+      - ""
+
+  PubSubnetCId:
+    Description: Public Subnet C
+    Value: !If
+      - PubC
+      - !Ref PubSubnetC
+      - ""
+
+  PrivSubnetAId:
+    Description: Private Subnet A
+    Value: !If
+      - PrivA
+      - !Ref PrivSubnetA
+      - ""
+
+  PrivSubnetBId:
+    Description: Private Subnet B
+    Value: !If
+      - PrivB
+      - !Ref PrivSubnetB
+      - ""
+
+  PrivSubnetCId:
+    Description: Private Subnet C
+    Value: !If
+      - PrivC
+      - !Ref PrivSubnetC
+      - ""
+
