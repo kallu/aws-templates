@@ -16,6 +16,10 @@ AWS VPC network template
 * VPC S3 end-point and routing for every subnet
 * Internal R53 zone
 
-### TODO:
+![VPC diagram](/vpc.png)
+
+### ToDo:
 * Option to use existing EIPs for NAT gateways
-* Cross-AZ routing from private subnets to NAT gateways to a) serve multiple AZs with single gateway or b) do cross-AZ routing in case of single gateway failure.
+* Cross-AZ routing from private subnets to NAT gateways to
+   1. serve multiple AZs with single gateway
+   2. do cross-AZ routing in case of single gateway failure.
