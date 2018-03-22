@@ -10,9 +10,7 @@ AWS VPC network template
 * Public and private subnet for each AZ
 * Shared routing table for public subnets and dedicated tables for each private subnet
 * NAT gateway for each AZ when there is both public and private subnet
-* Option
-	- to use existing EIPs for NAT gateways OR
-	- to retain EIPs allocated for NAT gateways after stack deletion
+* Option to use pre-allocated EIPs for NAT gateways
 * Routing from private subnets to internet via NAT gateway in same AZ
 * VPN gateway and routing for private subnets
 * VPC S3 end-point and routing for every subnet
