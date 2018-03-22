@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: VPC network v1.0
+Description: VPC network v1.1
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -20,8 +20,9 @@ Metadata:
         Label:
           default: NAT configuration
         Parameters:
-          - EipDeletionPolicy
-
+          - EipA
+          - EipB
+          - EipC
       -
         Label:
           default: DNS configuration
@@ -64,11 +65,18 @@ Parameters:
     Description: Private Subnet C
     Default: ""
     AllowedPattern: '(((\d{1,3})\.){3}\d{1,3}/\d{1,2}){0,1}'
-  EipDeletionPolicy:
+  EipA:
     Type: String
-    Description: Delete or retain Elastic IPs after stack termination
-    Default: Delete
-    AllowedValues: [ Delete, Retain ]
+    Description: Pre-allocated EIP ID for AZ-A (optional)
+    Default: ""
+  EipB:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-B (optional)
+    Default: ""
+  EipC:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-C (optional)
+    Default: ""
   InternalZone:
     Type: String
     Description: Name of Route53 VPC internal zone
@@ -84,14 +92,11 @@ Conditions:
   PrivC: !Not [!Equals [!Ref PrivCidrC, "" ]]
   PrivAny: !Or [ Condition: PrivA, Condition: PrivB, Condition: PrivC ]
   NatA: !And [ Condition: PubA, Condition: PrivA ]
-  DeleteEipA: !And [ Condition: NatA, !Equals [ !Ref EipDeletionPolicy, "Delete" ] ]
-  KeepEipA: !And [ Condition: NatA, !Not [ Condition: DeleteEipA ] ]
   NatB: !And [ Condition: PubB, Condition: PrivB ]
-  DeleteEipB: !And [ Condition: NatB, !Equals [ !Ref EipDeletionPolicy, "Delete" ] ]
-  KeepEipB: !And [ Condition: NatB, !Not [ Condition: DeleteEipB ] ]
   NatC: !And [ Condition: PubC, Condition: PrivC ]
-  DeleteEipC: !And [ Condition: NatC, !Equals [ !Ref EipDeletionPolicy, "Delete" ] ]
-  KeepEipC: !And [ Condition: NatC, !Not [ Condition: DeleteEipC ] ]
+  CreateEipA: !And [ Condition: NatA, !Equals [!Ref EipA, "" ] ]
+  CreateEipB: !And [ Condition: NatB, !Equals [!Ref EipB, "" ] ]
+  CreateEipC: !And [ Condition: NatC, !Equals [!Ref EipC, "" ] ]
   HasIntZone: !Not [!Equals [!Ref InternalZone, "" ]]
 
 Resources:
@@ -213,24 +218,14 @@ Resources:
     Condition: NatA
     Properties:
       SubnetId: !Ref PubSubnetA
-      AllocationId: !GetAtt
-        - NatEipA
-        - AllocationId
+      AllocationId: !If [ CreateEipA, !GetAtt NatEipA.AllocationId, !Ref EipA ]
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} NAT-A'
 
   NatEipA:
     Type: AWS::EC2::EIP
-    Condition: KeepEipA
-    DeletionPolicy: Retain
-    Properties:
-      Domain: vpc
-
-  NatEipA:
-    Type: AWS::EC2::EIP
-    Condition: DeleteEipA
-    DeletionPolicy: Delete
+    Condition: CreateEipA
     Properties:
       Domain: vpc
 
@@ -258,24 +253,14 @@ Resources:
     Condition: NatB
     Properties:
       SubnetId: !Ref PubSubnetB
-      AllocationId: !GetAtt
-        - NatEipB
-        - AllocationId
+      AllocationId: !If [ CreateEipB, !GetAtt NatEipB.AllocationId, !Ref EipB ]
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} NAT-B'
 
   NatEipB:
     Type: AWS::EC2::EIP
-    Condition: KeepEipB
-    DeletionPolicy: Retain
-    Properties:
-      Domain: vpc
-
-  NatEipB:
-    Type: AWS::EC2::EIP
-    Condition: DeleteEipB
-    DeletionPolicy: Delete
+    Condition: CreateEipB
     Properties:
       Domain: vpc
 
@@ -303,24 +288,14 @@ Resources:
     Condition: NatC
     Properties:
       SubnetId: !Ref PubSubnetC
-      AllocationId: !GetAtt
-        - NatEipC
-        - AllocationId
+      AllocationId: !If [ CreateEipC, !GetAtt NatEipC.AllocationId, !Ref EipC ]
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} NAT-C'
 
   NatEipC:
     Type: AWS::EC2::EIP
-    Condition: KeepEipC
-    DeletionPolicy: Retain
-    Properties:
-      Domain: vpc
-
-  NatEipC:
-    Type: AWS::EC2::EIP
-    Condition: DeleteEipC
-    DeletionPolicy: Retain
+    Condition: CreateEipC
     Properties:
       Domain: vpc
 
@@ -349,7 +324,7 @@ Resources:
       VpcId: !Ref VPC
       AvailabilityZone: !Sub ${AWS::Region}a
       CidrBlock: !Ref PrivCidrA
-      MapPublicIpOnLaunch: true
+      MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} private subnet-A'
@@ -386,7 +361,7 @@ Resources:
       VpcId: !Ref VPC
       AvailabilityZone: !Sub ${AWS::Region}b
       CidrBlock: !Ref PrivCidrB
-      MapPublicIpOnLaunch: true
+      MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} private subnet-B'
@@ -423,7 +398,7 @@ Resources:
       VpcId: !Ref VPC
       AvailabilityZone: !Sub ${AWS::Region}c
       CidrBlock: !Ref PrivCidrC
-      MapPublicIpOnLaunch: true
+      MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} private subnet-C'
@@ -458,46 +433,21 @@ Outputs:
   VpcId:
     Description: VPC ID
     Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VpcId'
 
-  PubSubnetAId:
-    Description: Public Subnet A
-    Value: !If
-      - PubA
-      - !Ref PubSubnetA
-      - ""
+  PubSubnets:
+    Description: Public Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB},${subnetC}'
+      - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
+    Export:
+      Name: !Sub '${AWS::StackName}-PubSubnets'
 
-  PubSubnetBId:
-    Description: Public Subnet B
-    Value: !If
-      - PubB
-      - !Ref PubSubnetB
-      - ""
-
-  PubSubnetCId:
-    Description: Public Subnet C
-    Value: !If
-      - PubC
-      - !Ref PubSubnetC
-      - ""
-
-  PrivSubnetAId:
-    Description: Private Subnet A
-    Value: !If
-      - PrivA
-      - !Ref PrivSubnetA
-      - ""
-
-  PrivSubnetBId:
-    Description: Private Subnet B
-    Value: !If
-      - PrivB
-      - !Ref PrivSubnetB
-      - ""
-
-  PrivSubnetCId:
-    Description: Private Subnet C
-    Value: !If
-      - PrivC
-      - !Ref PrivSubnetC
-      - ""
-
+  PrivSubnets:
+    Description: Private Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB},${subnetC}'
+      - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivSubnets'
