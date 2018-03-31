@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: VPC network v1.1
+Description: VPC network v1.2
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -428,6 +428,42 @@ Resources:
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGwC
 
+  ParamStoreVpcId:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/vpcid'
+      Description: !Sub '${AWS::StackName} VPC ID' 
+      Type: 'String'
+      Value: !Ref VPC
+
+  ParamStoreVpcZoneId:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/r53zoneid'
+      Description: !Sub '${AWS::StackName} Internal R53 Zone ID'
+      Type: 'String'
+      Value: !Ref InternalZone
+
+  ParamStorePubSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/pubsubnets'
+      Description: !Sub '${AWS::StackName} public subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB},${subnetC}'
+        - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
+
+  ParamStorePrivSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/privsubnets'
+      Description: !Sub '${AWS::StackName} private subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB},${subnetC}'
+        - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
+
 Outputs:
 
   VpcId:
@@ -435,6 +471,12 @@ Outputs:
     Value: !Ref VPC
     Export:
       Name: !Sub '${AWS::StackName}-VpcId'
+
+  R53ZoneId:
+    Description: R53 internal zone ID
+    Value: !If [ HasIntZone, !Ref InternalZone, "" ]
+    Export: 
+      Name: !Sub '${AWS::StackName}-R53ZoneId'
 
   PubSubnets:
     Description: Public Subnets

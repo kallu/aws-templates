@@ -15,5 +15,17 @@ AWS VPC network template
 * VPN gateway and routing for private subnets
 * VPC S3 end-point and routing for every subnet
 * Internal R53 zone
+* Outputs as
+   * Cloudformation stack exports
+   * SSM parameterstore parameters
+
+### Outputs
+
+|Value |Export |Parameter |
+|------|-------|----------|
+|VPC ID|{STACKNAME}-VpcId|/cloudformation/{STACKNAME}/vpcid|
+|Public Subnets|{STACKNAME-PubSubnets}|/cloudformation/{STACKNAME}/pubsubnets|
+|Private Subnets|{STACKNAME}-PrivSubnets|/cloudformation/{STACKNAME}/privsubnets|
+|Internal R53 ZoneID|{STACKNAME}-R53ZoneId|/cloudformation/{STACKNAME}/r53zoneid|
 
 ![VPC diagram](/vpc.png)
