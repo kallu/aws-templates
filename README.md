@@ -19,12 +19,12 @@ AWS VPC network template
    * Cloudformation stack exports
    * SSM parameterstore parameters
 
-### Outputs
+### Outputs:
 
 |Value |Export |Parameter |
 |------|-------|----------|
 |VPC ID|{STACKNAME}-VpcId|/cloudformation/{STACKNAME}/vpcid|
-|Public Subnets|{STACKNAME-PubSubnets}|/cloudformation/{STACKNAME}/pubsubnets|
+|Public Subnets|{STACKNAME}-PubSubnets|/cloudformation/{STACKNAME}/pubsubnets|
 |Private Subnets|{STACKNAME}-PrivSubnets|/cloudformation/{STACKNAME}/privsubnets|
 |Internal R53 ZoneID|{STACKNAME}-R53ZoneId|/cloudformation/{STACKNAME}/r53zoneid|
 
