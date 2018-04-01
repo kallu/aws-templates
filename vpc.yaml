@@ -442,7 +442,7 @@ Resources:
       Name: !Sub '/cloudformation/${AWS::StackName}/r53zoneid'
       Description: !Sub '${AWS::StackName} Internal R53 Zone ID'
       Type: 'String'
-      Value: !Ref InternalZone
+      Value: !Ref InternalDnsZone
 
   ParamStorePubSubnets:
     Type: "AWS::SSM::Parameter"
@@ -474,7 +474,7 @@ Outputs:
 
   R53ZoneId:
     Description: R53 internal zone ID
-    Value: !If [ HasIntZone, !Ref InternalZone, "" ]
+    Value: !If [ HasIntZone, !Ref InternalDnsZone, "" ]
     Export: 
       Name: !Sub '${AWS::StackName}-R53ZoneId'
 
