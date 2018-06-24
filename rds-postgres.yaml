@@ -1,0 +1,433 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: RDS Postgres v1.0
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: RDS configuration
+        Parameters:
+          - DBName
+          - SnapshotName
+          - MasterUsername
+          - MasterUserPassword
+          - DBInstanceClass
+          - DBStorage
+          - MultiAZ
+          - ReadReplica
+          - DBVersion
+          - DBParamsStack
+          - KMSEncryptionKey
+      -
+        Label:
+          default: Network configuration
+        Parameters:
+          - VPCStack
+          - AppSecGroup
+          - AllowAccess
+      -
+        Label:
+          default: DNS configuration
+        Parameters:
+          - ConfigureR53
+          - Cname
+          - R53HostedZoneName
+      -
+        Label:
+          default: Cloudwatch monitoring
+        Parameters:
+          - SNSTopic
+
+Parameters:
+
+  DBParamsStack:
+    Type: String
+    Description: Stack with DB parameters (must export PARAMSID)
+
+  ConfigureR53:
+    Type: String
+    Description: Configure domain for database (if yes you need to set Cname and R53HostedZoneName parameters)
+    AllowedValues: [ "true", "false" ]
+    Default: false
+
+  Cname:
+    Type: String
+    Description: Domain name to create for DB e.g. db.domain.com (optional)
+    Default: ""
+
+  R53HostedZoneName:
+    Type: String
+    Description: Route53 hosted zone name e.g. domain.com (optional)
+
+  DBName:
+    Type: String
+    Description: Database name (use the name from the original DB if restoring from a snapshot)
+    MinLength: 1
+    MaxLength: 64
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: Must begin with a letter and contain 1-64 alphanumeric characters.
+    Default: MyDatabase
+
+  MasterUsername:
+    Type: String
+    Description: Database admin username
+    MinLength: 1
+    MaxLength: 63
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: Must begin with a letter and contain 1-63 alphanumeric characters."
+    Default: master
+
+  MasterUserPassword:
+    Type: String
+    Description: Database admin account password
+    MinLength: 8
+    MaxLength: 40
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: "Must contain 8-40 alphanumeric characters."
+    NoEcho: true
+
+  DBInstanceClass:
+    Type: String
+    Description: RDS instance type
+    AllowedPattern: "db.*"
+    ConstraintDescription: RDS instance type begins with db
+    Default: db.t2.medium
+
+  DBStorage:
+    Type: Number
+    Description: Database storage (GB)
+    Default: 100
+
+  MultiAZ:
+    Type: String
+    Description: Multi-AZ
+    AllowedValues: [ "true", "false" ]
+    Default: false
+
+  ReadReplica:
+    Type: String
+    Description: Read-replica
+    AllowedValues: [ "true", "false" ]
+    Default: false
+
+  DBVersion:
+    Type: String
+    Description: Postgres version
+    AllowedValues:
+      - "9.4"
+      - "9.5"
+      - "9.6"
+      - "10.1"
+      - "10.3"
+    Default: "9.6"
+
+  VPCStack:
+    Type: String
+    Description: Name of VPC Cloudformation stack
+
+  AppSecGroup:
+    Type: String
+    Description: Allow access from application security group (optional)
+    Default: ""
+
+  AllowAccess:
+    Type: String
+    Description: Allow access from CIDR (leave empty to use database specific sec.group)
+    Default: ""
+
+  SNSTopic:
+    Type: String
+    Description: SNS topic for Cloudwatch alerts (leave empty to disable Cloudwatch)
+    Default: ""
+
+  SnapshotName:
+    Type: String
+    Description: Name or ARN if using shared snapshot to restore database from. Leave empty to create empty DB instance
+    Default: ""
+
+  KMSEncryptionKey:
+    Type: String
+    Description: KMS Key ARN for RDS encryption (leave empty to disable encryption)
+    Default: ""
+
+Conditions:
+
+  AllowAppAccess: !Not [!Equals [!Ref AppSecGroup, "" ]]
+  AllowExternalAccess: !Not [!Equals [!Ref AllowAccess, "" ]]
+  HasCloudwatch: !Not [!Equals [!Ref SNSTopic, "" ]]
+  HasReplica: !Equals [!Ref ReadReplica, "true"]
+  UseSnapshot: !Not [!Equals [!Ref SnapshotName, "" ]]
+  HasDBDomain: !Equals [!Ref ConfigureR53, "true" ]
+  HasDBParamsStack: !Not [!Equals [!Ref DBParamsStack, "" ]]
+  HasEncryption: !Not [!Equals [!Ref KMSEncryptionKey, "" ]]
+
+Resources:
+
+  MyDB:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Ref AWS::StackName
+      DBName:
+      - !If
+        - UseSnapshot
+        - !Ref AWS::NoValue
+        - !Ref DBName
+      KmsKeyId:
+      - !If
+        - HasEncryption
+        - !Ref KMSEncryptionKey
+        - !Ref AWS::NoValue
+      StorageEncrypted:
+      - !If
+        - HasEncryption
+        - true
+        - !Ref AWS::NoValue
+      StorageType: gp2
+      AllocatedStorage: !Ref DBStorage
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: postgres
+      EngineVersion: !Ref DBVersion
+      MultiAZ: !Ref MultiAZ
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
+      DBParameterGroupName:
+      - !If
+        - HasDBParamsStack
+        - Fn::ImportValue: !Sub "${DBParamsStack}-ParamGroupId"
+        - !Ref MyRDSParamGroup
+      VPCSecurityGroups:
+        - !Ref MySecGroup
+        - !Ref MyExtSecGroup
+      DBSubnetGroupName: !Ref MySubnetGroup
+      BackupRetentionPeriod: 30
+      CopyTagsToSnapshot: true
+      DBSnapshotIdentifier:
+      - !If
+        - UseSnapshot
+        - !Ref SnapshotName
+        - !Ref AWS::NoValue
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  ReplicaDB:
+    Type: AWS::RDS::DBInstance
+    Condition: HasReplica
+    Properties:
+      DBInstanceIdentifier: !Sub "${AWS::StackName}-replica"
+      SourceDBInstanceIdentifier: !Ref MyDB
+      DBInstanceClass: !Ref DBInstanceClass
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  MySubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub "${AWS::StackName} database subnet group"
+      SubnetIds: !Split
+        - ','
+        - Fn::ImportValue: !Sub "${VPCStack}-PrivSubnets"
+
+  MySecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${AWS::StackName} RDS security group"
+      VpcId:
+        Fn::ImportValue: !Sub "${VPCStack}-VpcId"
+
+  MySecGroupRuleInternal:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref MySecGroup
+      FromPort: 5432
+      ToPort: 5432
+      IpProtocol: tcp
+      SourceSecurityGroupId: !Ref MySecGroup
+      SourceSecurityGroupOwnerId: !Ref AWS::AccountId
+
+  MyExtSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${AWS::StackName} RDS security group for external access"
+      VpcId:
+        Fn::ImportValue: !Sub "${VPCStack}-VpcId"
+
+  MySecGroupRuleApplication:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: AllowAppAccess
+    Properties:
+      GroupId: !Ref MyExtSecGroup
+      FromPort: 5432
+      ToPort: 5432
+      IpProtocol: tcp
+      SourceSecurityGroupId: !Ref AppSecGroup
+      SourceSecurityGroupOwnerId: !Ref AWS::AccountId
+
+  MySecGroupRuleExternal:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: AllowExternalAccess
+    Properties:
+      GroupId: !Ref MyExtSecGroup
+      FromPort: 5432
+      ToPort: 5432
+      IpProtocol: tcp
+      CidrIp: !Ref AllowAccess
+
+  MyRDSParamGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Family: !Sub "postgres${DBVersion}"
+      Description: !Sub "${AWS::StackName} PostgreSQL ${DBVersion} database parameter group"
+
+  AlertHighCPU:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasCloudwatch
+    Properties:
+      ActionsEnabled: true
+      Namespace: AWS/RDS
+      MetricName: CPUUtilization
+      Period: 60
+      EvaluationPeriods: 10
+      Statistic: Average
+      Threshold: 90.0
+      AlarmDescription: !Sub "RDS ${AWS::StackName} has high CPU utilization"
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref MyDB
+      AlarmActions: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopic}"
+      OKActions: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopic}"
+
+  AlertLowStorage:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasCloudwatch
+    Properties:
+      ActionsEnabled: true
+      Namespace: AWS/RDS
+      MetricName: FreeStorageSpace
+      Period: 60
+      EvaluationPeriods: 10
+      Statistic: Maximum
+      Threshold: 500000000
+      AlarmDescription: !Sub "RDS ${AWS::StackName} has low free storage"
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref MyDB
+      AlarmActions: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopic}"
+      OKActions: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopic}"
+
+  AlertLowMem:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasCloudwatch
+    Properties:
+      ActionsEnabled: true
+      Namespace: AWS/RDS
+      MetricName: FreeableMemory
+      Period: 60
+      EvaluationPeriods: 10
+      Statistic: Maximum
+      Threshold: 100000000
+      AlarmDescription: !Sub "RDS ${AWS::StackName} has low freeable memory"
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref MyDB
+      AlarmActions: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopic}"
+      OKActions: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopic}"
+
+  DBDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasDBDomain
+    DependsOn: MyDB
+    Properties:
+      Comment: CNAME to RDS database
+      HostedZoneName: !Ref R53HostedZoneName
+      Name: !Ref Cname
+      ResourceRecords: !GetAtt MyDB.Endpoint.Address
+      TTL: 300
+      Type: CNAME
+
+  ReplicaDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasDBDomain
+    DependsOn: ReplicaDB
+    Properties:
+      Comment: CNAME to RDS read-replica
+      HostedZoneName: !Ref R53HostedZoneName
+      Name: !Ref Cname
+      ResourceRecords: !GetAtt ReplicaDB.Endpoint.Address
+      TTL: 300
+      Type: CNAME
+
+  ParamStoreJDBC:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/cloudformation/${AWS::StackName}/jdbc"
+      Description: !Sub "${AWS::StackName} JDBC connection string"
+      Type: String
+      Value: !Sub
+        - 'jdbc:postgresql://${addr}:${port}/${name}'
+        - { addr: !GetAtt MyDB.Endpoint.Address, port: !GetAtt MyDB.Endpoint.Port, name: !Ref DBName }
+
+  ParamStoreJDBCReplica:
+    Type: AWS::SSM::Parameter
+    Condition: HasReplica
+    Properties:
+      Name: !Sub "/cloudformation/${AWS::StackName}/jdbc-replica"
+      Description: !Sub "${AWS::StackName} read-replica JDBC connection string"
+      Type: String
+      Value: !Sub
+        - 'jdbc:postgresql://${addr}:${port}/${name}'
+        - { addr: !GetAtt ReplicaDB.Endpoint.Address, port: !GetAtt ReplicaDB.Endpoint.Port, name: !Ref DBName }
+
+  ParamStoreSecGroup:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/cloudformation/${AWS::StackName}/secgroup"
+      Description: !Sub "${AWS::StackName} security group"
+      Type: String
+      Value: !Ref MySecGroup
+
+  ParamStoreParamGroup:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/cloudformation/${AWS::StackName}/paramgroup"
+      Description: !Sub "${AWS::StackName} parameter group"
+      Type: String
+      Value: !Ref MyRDSParamGroup
+
+Outputs:
+
+  SecurityGroup:
+    Description: RDS database security group
+    Value: !Ref MySecGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-SecurityGroup"
+
+  ParameterGroup:
+    Description: RDS database parameter group
+    Value: !Ref MyRDSParamGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-ParameterGroup"
+
+  JDBCConnectionString:
+    Description: JDBC connection string for master database
+    Value: !Sub
+      - 'jdbc:postgresql://${addr}:${port}/${name}'
+      - { addr: !GetAtt MyDB.Endpoint.Address, port: !GetAtt MyDB.Endpoint.Port, name: !Ref DBName }
+    Export:
+      Name: !Sub "${AWS::StackName}-JDBCConnectionString"
+
+  JDBCConnectionStringReplica:
+    Condition: HasReplica
+    Description: JDBC connection string for replica database
+    Value: !Sub
+      - 'jdbc:postgresql://${addr}:${port}/${name}'
+      - { addr: !GetAtt ReplicaDB.Endpoint.Address, port: !GetAtt ReplicaDB.Endpoint.Port, name: !Ref DBName }
+    Export:
+      Name: !Sub "${AWS::StackName}-JDBCConnectionStringReplica"
