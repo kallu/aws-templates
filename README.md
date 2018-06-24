@@ -1,6 +1,6 @@
 # AWS Cloudformation templates 
 
-### vpc.yaml
+## vpc.yaml
 
 AWS VPC network template
 
@@ -29,3 +29,33 @@ AWS VPC network template
 |Internal R53 ZoneID|{STACKNAME}-R53ZoneId|/cloudformation/{STACKNAME}/r53zoneid|
 
 ![VPC diagram](/vpc.png)
+
+## rds-postgres.yaml
+
+RDS Postgres template
+
+### Features:
+* RDS Postgres database in private subnets of VPC
+* Automated backups enabled with 30 days retention
+* Automated snapshot when Cloudformation stack is delete
+* Initialize database from snapshot (option)
+* Multi-az deployment (option)
+* Read replica (option)
+* DNS CNAME (option)
+* RDS KMS encryption (option)
+* Cloudwatch alerting (optional)
+   * CPUUtilization > 90%
+   * FreeStorageSpace < 500MB
+   * FreeableMemory < 100MB
+* Outputs as
+   * Cloudformation stack exports
+   * SSM parameterstore parameters
+
+### Outputs:
+
+|Value |Export |Parameter |
+|------|-------|----------|
+|RDS Security Group|{STACKNAME}-SecurityGroup| /cloudformation/{STACKNAME}/secgroup |
+|RDS Parameter Group|{STACKNAME}-ParameterGroup| /cloudformation/{STACKNAME}/paramgroup |
+|Master JDBC ConnString|{STACKNAME}-JDBCConnectionString| /cloudformation/{STACKNAME}/jdbc |
+|Replica JDBC ConnString|{STACKNAME}-JDBCConnectionStringReplica| /cloudformation/{STACKNAME}/jdbc-replica |
