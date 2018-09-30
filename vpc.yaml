@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: VPC network v1.2
+Description: VPC network v1.3
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -16,6 +16,11 @@ Metadata:
           - PrivCidrA
           - PrivCidrB
           - PrivCidrC
+      -
+        Label:
+          default: VPC Endpoints
+        Parameters:
+          - InterfaceEndpoints
       -
         Label:
           default: NAT configuration
@@ -81,6 +86,13 @@ Parameters:
     Type: String
     Description: Name of Route53 VPC internal zone
     Default: vpc.internal
+  InterfaceEndpoints:
+    Type: String
+    Description: Enable interface endpoints for AWS services
+    Default: false
+    AllowedValues:
+      - false
+      - true
 
 Conditions:
   PubA: !Not [!Equals [!Ref PubCidrA, "" ]]
@@ -98,6 +110,7 @@ Conditions:
   CreateEipB: !And [ Condition: NatB, !Equals [!Ref EipB, "" ] ]
   CreateEipC: !And [ Condition: NatC, !Equals [!Ref EipC, "" ] ]
   HasIntZone: !Not [!Equals [!Ref InternalZone, "" ]]
+  EnableEndpoints: !Equals [!Ref InterfaceEndpoints, true]
 
 Resources:
 
@@ -175,6 +188,7 @@ Resources:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
       VpcId: !Ref VPC
       RouteTableIds:
       - !If
@@ -192,6 +206,116 @@ Resources:
       - !If
         - PrivC
         - !Ref PrivRouteTableC
+        - !Ref AWS::NoValue
+
+  VpcEndpointSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: EnableEndpoints
+    Properties:
+      GroupDescription: !Sub "VPC Interface end-point sec.group ${AWS::StackName}"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        -
+          CidrIp: !Ref VpcCidr
+          Description: Allow all from VPC CIDR
+          IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+
+  SSMvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssm'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  EC2vpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ec2'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  SSMMSGvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssmmessages'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  EC2MSGvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ec2messages'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
         - !Ref AWS::NoValue
 
   PubSubnetA:

@@ -14,6 +14,11 @@ AWS VPC network template
 * Routing from private subnets to internet via NAT gateway in same AZ
 * VPN gateway and routing for private subnets
 * VPC S3 end-point and routing for every subnet
+* Option for VPC interface end-points for private subnets
+   * com.amazonaws.region.ssm
+   * com.amazonaws.region.ec2
+   * com.amazonaws.region.ssmmessages
+   * com.amazonaws.region.ec2messages
 * Internal R53 zone
 * Outputs as
    * Cloudformation stack exports
