@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: VPC network v1.3
+Description: VPC network v1.3.1
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -217,10 +217,10 @@ Resources:
       SecurityGroupIngress:
         -
           CidrIp: !Ref VpcCidr
-          Description: Allow all from VPC CIDR
+          Description: Allow HTTPS from VPC CIDR
           IpProtocol: tcp
-          FromPort: 0
-          ToPort: 65535
+          FromPort: 443
+          ToPort: 443
 
   SSMvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
