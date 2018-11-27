@@ -88,4 +88,3 @@ If restoring from database snapshot, use rds-aurora-restore.yaml -template
 |------|-------|----------|
 |RDS Security Group|{STACKNAME}-SecurityGroup| /cloudformation/{STACKNAME}/secgroup |
 |JDBC ConnString|{STACKNAME}-JDBCConnectionString| /cloudformation/{STACKNAME}/jdbc |
-|ReadOnly JDBC ConnString|{STACKNAME}-JDBCConnectionStringRO| /cloudformation/{STACKNAME}/jdbc-readonly |
