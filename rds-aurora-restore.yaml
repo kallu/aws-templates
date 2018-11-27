@@ -1,0 +1,230 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: RDS Aurora Serverless v1.0
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: RDS configuration
+        Parameters:
+          - DBName
+          - DbCapMin
+          - DbCapMax
+          - SnapshotName
+      -
+        Label:
+          default: Network configuration
+        Parameters:
+          - VPCStack
+          - AppSecGroup
+          - AllowAccess
+      -
+        Label:
+          default: DNS configuration
+        Parameters:
+          - ConfigureR53
+          - Cname
+          - R53HostedZoneName
+      -
+        Label:
+          default: Cloudwatch monitoring
+        Parameters:
+          - SNSTopic
+
+Parameters:
+
+  ConfigureR53:
+    Type: String
+    Description: Configure domain for database (if yes you need to set Cname and R53HostedZoneName parameters)
+    AllowedValues: [ "true", "false" ]
+    Default: false
+
+  Cname:
+    Type: String
+    Description: Domain name to create for DB e.g. db.domain.com (optional)
+    Default: ""
+
+  R53HostedZoneName:
+    Type: String
+    Description: Route53 hosted zone name e.g. domain.com. (optional, ends with ".")
+
+  DBName:
+    Type: String
+    Description: Database name (use the name from the original DB if restoring from a snapshot)
+    MinLength: 1
+    MaxLength: 64
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: Must begin with a letter and contain 1-64 alphanumeric characters.
+    Default: MyDatabase
+
+  DbCapMin:
+    Type: Number
+    Description: Minimum DB capacity
+    AllowedValues: [ 2, 4, 8, 16, 32, 64, 128, 256 ]
+    Default: 2
+
+  DbCapMax:
+    Type: Number
+    Description: Maximum DB capacity
+    AllowedValues: [ 2, 4, 8, 16, 32, 64, 128, 256 ]
+    Default: 2
+
+  VPCStack:
+    Type: String
+    Description: Name of VPC Cloudformation stack
+    Default: osc-vpc
+
+  AppSecGroup:
+    Type: String
+    Description: Allow access from application security group (optional)
+    Default: ""
+
+  AllowAccess:
+    Type: String
+    Description: Allow access from CIDR (leave empty to use database specific sec.group)
+    Default: ""
+
+  SNSTopic:
+    Type: String
+    Description: SNS topic for Cloudwatch alerts (leave empty to disable Cloudwatch)
+    Default: ""
+
+  SnapshotName:
+    Type: String
+    Description: Name or ARN if using shared snapshot to restore database from.
+    Default: ""
+
+Conditions:
+
+  AllowAppAccess: !Not [!Equals [!Ref AppSecGroup, "" ]]
+  AllowExternalAccess: !Not [!Equals [!Ref AllowAccess, "" ]]
+  HasCloudwatch: !Not [!Equals [!Ref SNSTopic, "" ]]
+  HasDBDomain: !Equals [!Ref ConfigureR53, "true" ]
+
+Resources:
+
+  MyDB:
+    Type: "AWS::RDS::DBCluster"
+    DeletionPolicy: Snapshot
+    Properties:
+      DBClusterIdentifier: !Ref AWS::StackName
+      DatabaseName: !Ref DBName
+      Engine: aurora
+      EngineMode: serverless
+      SnapshotIdentifier: !Ref SnapshotName
+      # Inherited from the snapshot and must not be specified here!
+      # StorageEncrypted: true
+      # EngineVersion: !Ref DBVersion
+      BackupRetentionPeriod: 30
+      DeletionProtection: false
+      Port: 3306
+      DBSubnetGroupName: !Ref MySubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref MySecGroup
+        - !Ref MyExtSecGroup
+      DBClusterParameterGroupName: default.aurora5.6
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  MySubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub "${AWS::StackName} database subnet group"
+      SubnetIds: !Split
+        - ','
+        - Fn::ImportValue: !Sub "${VPCStack}-PrivSubnets"
+
+  MySecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${AWS::StackName} RDS security group"
+      VpcId:
+        Fn::ImportValue: !Sub "${VPCStack}-VpcId"
+
+  MySecGroupRuleInternal:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref MySecGroup
+      FromPort: 3306
+      ToPort: 3306
+      IpProtocol: tcp
+      SourceSecurityGroupId: !Ref MySecGroup
+      SourceSecurityGroupOwnerId: !Ref AWS::AccountId
+
+  MyExtSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${AWS::StackName} RDS security group for external access"
+      VpcId:
+        Fn::ImportValue: !Sub "${VPCStack}-VpcId"
+
+  MySecGroupRuleApplication:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: AllowAppAccess
+    Properties:
+      GroupId: !Ref MyExtSecGroup
+      FromPort: 3306
+      ToPort: 3306
+      IpProtocol: tcp
+      SourceSecurityGroupId: !Ref AppSecGroup
+      SourceSecurityGroupOwnerId: !Ref AWS::AccountId
+
+  MySecGroupRuleExternal:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: AllowExternalAccess
+    Properties:
+      GroupId: !Ref MyExtSecGroup
+      FromPort: 3306
+      ToPort: 3306
+      IpProtocol: tcp
+      CidrIp: !Ref AllowAccess
+
+  DBDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasDBDomain
+    DependsOn: MyDB
+    Properties:
+      Comment: CNAME to RDS database
+      HostedZoneName: !Ref R53HostedZoneName
+      Name: !Ref Cname
+      ResourceRecords:
+        - !GetAtt MyDB.Endpoint.Address
+      TTL: 300
+      Type: CNAME
+
+  ParamStoreJDBC:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/cloudformation/${AWS::StackName}/jdbc"
+      Description: !Sub "${AWS::StackName} JDBC connection string"
+      Type: String
+      Value: !Sub
+        - 'jdbc:postgresql://${addr}:${port}/${name}'
+        - { addr: !GetAtt MyDB.Endpoint.Address, port: !GetAtt MyDB.Endpoint.Port, name: !Ref DBName }
+
+  ParamStoreSecGroup:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/cloudformation/${AWS::StackName}/secgroup"
+      Description: !Sub "${AWS::StackName} security group"
+      Type: String
+      Value: !Ref MySecGroup
+
+Outputs:
+
+  SecurityGroup:
+    Description: RDS database security group
+    Value: !Ref MySecGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-SecurityGroup"
+
+  JDBCConnectionString:
+    Description: JDBC connection string
+    Value: !Sub
+      - 'jdbc:mysql://${addr}:${port}/${name}'
+      - { addr: !GetAtt MyDB.Endpoint.Address, port: !GetAtt MyDB.Endpoint.Port, name: !Ref DBName }
+    Export:
+      Name: !Sub "${AWS::StackName}-JDBCConnectionString"
