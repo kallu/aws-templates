@@ -110,7 +110,7 @@ Conditions:
   CreateEipB: !And [ Condition: NatB, !Equals [!Ref EipB, "" ] ]
   CreateEipC: !And [ Condition: NatC, !Equals [!Ref EipC, "" ] ]
   HasIntZone: !Not [!Equals [!Ref InternalZone, "" ]]
-  EnableEndpoints: Equals [!Ref InterfaceEndpoints, true]
+  EnableEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
 
 Resources:
 
