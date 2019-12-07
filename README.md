@@ -12,14 +12,19 @@ AWS VPC network template
 * NAT gateway for each AZ when there is both public and private subnet
 * Option to use pre-allocated EIPs for NAT gateways
 * Routing from private subnets to internet via NAT gateway in same AZ
-* VPN gateway and routing for private subnets
+(vpc1nat.yaml will use a single NAT gateway in AZ-A public subnet for all private subnets)
 * VPC S3 end-point and routing for every subnet
 * Option for VPC interface end-points for private subnets
    * com.amazonaws.region.ssm
    * com.amazonaws.region.ec2
    * com.amazonaws.region.ssmmessages
    * com.amazonaws.region.ec2messages
-* Internal R53 zone
+   * com.amazonaws.region.ecs
+   * com.amazonaws.region.ecs-agent
+   * com.amazonaws.region.ecs-telemetry
+   * com.amazonaws.region.ecr.api
+   * com.amazonaws.region.ecr.dkr
+* Option for internal R53 zone
 * Outputs as
    * Cloudformation stack exports
    * SSM parameterstore parameters
@@ -32,7 +37,6 @@ AWS VPC network template
 |Public Subnets|{STACKNAME}-PubSubnets|/cloudformation/{STACKNAME}/pubsubnets|
 |Private Subnets|{STACKNAME}-PrivSubnets|/cloudformation/{STACKNAME}/privsubnets|
 |Internal R53 ZoneID|{STACKNAME}-R53ZoneId|/cloudformation/{STACKNAME}/r53zoneid|
-
 ![VPC diagram](/vpc.png)
 
 ## rds-postgres.yaml
