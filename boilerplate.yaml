@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Boilerplate for Cloudformation template to start building things into VPC
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: Network configuration
+        Parameters:
+          - VPC
+          - Subnets
+          - AllowAccessCIDR
+
+Parameters:
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC for deployment
+
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets within above VPC
+
+  AllowAccessCIDR:
+    Type: String 
+    Descript: CIDR allowed HTTP access in security group (can be empty)
+
+Rules:
+  SubnetsInVPC:
+    Assertions:
+    - Assert:
+        Fn::EachMemberIn:
+        - Fn::ValueOf:
+          - Subnets
+          - VpcId
+        - 
+          - !Ref VPC
+      AssertDescription: All subnets must within the VPC
+  
+Conditions:
+  AllowAccess: !Not [!Equals [!Ref AllowAccessCIDR, ""]]
+
+Resources:
+  SecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Dummy sec.group for a demo
+
+SecurityGroupIngressRule:
+  Type: "AWS::EC2::SecurityGroupIngress"
+  Condition: AllowAccess
+  Properties:
+    GroupId: !Ref SecGroup
+    CidrIp: !Ref AllowAccessCIDR
+    Description: !Sub "Allow HTTP from ${AllowAccessCIDR}"
+    FromPort: 80
+    IpProtocol: TCP
+    ToPort: 80
+
+Outputs:
+  SecurityGroup:
+    Description: VPC security group
+    Value: !Ref SecGroup
