@@ -23,8 +23,12 @@ Parameters:
     Description: Subnets within above VPC
 
   AllowAccessCIDR:
-    Type: String 
-    Descript: CIDR allowed HTTP access in security group (can be empty)
+    Type: String
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+    Description: CIDR allowed HTTP access in security group (can be empty)
+
+# Pattern for VPC and Subnet CIDR, x.x.x.x/16-28 (can not be empty)
+# ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$
 
 Rules:
   SubnetsInVPC:
@@ -48,16 +52,16 @@ Resources:
       VpcId: !Ref VPC
       GroupDescription: Dummy sec.group for a demo
 
-SecurityGroupIngressRule:
-  Type: "AWS::EC2::SecurityGroupIngress"
-  Condition: AllowAccess
-  Properties:
-    GroupId: !Ref SecGroup
-    CidrIp: !Ref AllowAccessCIDR
-    Description: !Sub "Allow HTTP from ${AllowAccessCIDR}"
-    FromPort: 80
-    IpProtocol: TCP
-    ToPort: 80
+  SecurityGroupIngressRule:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Condition: AllowAccess
+    Properties:
+      GroupId: !Ref SecGroup
+      CidrIp: !Ref AllowAccessCIDR
+      Description: !Sub "Allow HTTP from ${AllowAccessCIDR}"
+      FromPort: 80
+      IpProtocol: TCP
+      ToPort: 80
 
 Outputs:
   SecurityGroup:
