@@ -105,3 +105,7 @@ Boilerplate to start building things into VPC
 * Pattern to validate CIRD
 * ```Rules``` to verify subnets are in given VPC
 * Conditional resource
+
+## vpcsimple.yaml
+
+Simple VPC with 4 equal sized subnets (2 public + 2 private) automatically calculated from VPC CIDR using ```Fn::Cidr:```
