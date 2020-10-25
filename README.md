@@ -95,9 +95,9 @@ If restoring from database snapshot, use rds-aurora-restore.yaml -template
 |RDS Security Group|{STACKNAME}-SecurityGroup| /cloudformation/{STACKNAME}/secgroup |
 |JDBC ConnString|{STACKNAME}-JDBCConnectionString| /cloudformation/{STACKNAME}/jdbc |
 
-## boulerplate.yaml
+## boilerplate.yaml
 
-Boilerplace to start building things into VPC
+Boilerplate to start building things into VPC
 
 ### Features:
 * ```AWS::CloudFormation::Interface``` for user friendly grouping of parameters 
