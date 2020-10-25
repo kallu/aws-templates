@@ -11,8 +11,8 @@ AWS VPC network template
 * Shared routing table for public subnets and dedicated tables for each private subnet
 * NAT gateway for each AZ when there is both public and private subnet
 * Option to use pre-allocated EIPs for NAT gateways
-* Routing from private subnets to internet via NAT gateway in same AZ
-(vpc1nat.yaml will use a single NAT gateway in AZ-A public subnet for all private subnets)
+* Routing from private subnets to internet via NAT gateway in same AZ.
+NOTE: vpc1nat.yaml will use a single NAT gateway in AZ-A public subnet for all private subnets.
 * VPC S3 end-point and routing for every subnet
 * Option for VPC interface end-points for private subnets
    * com.amazonaws.region.ssm
@@ -24,10 +24,13 @@ AWS VPC network template
    * com.amazonaws.region.ecs-telemetry
    * com.amazonaws.region.ecr.api
    * com.amazonaws.region.ecr.dkr
+   * com.amazonaws.region.cloudformation
 * Option for internal R53 zone
 * Outputs as
    * Cloudformation stack exports
    * SSM parameterstore parameters
+
+![VPC diagram](/vpc.png)
 
 ### Outputs:
 
@@ -37,7 +40,6 @@ AWS VPC network template
 |Public Subnets|{STACKNAME}-PubSubnets|/cloudformation/{STACKNAME}/pubsubnets|
 |Private Subnets|{STACKNAME}-PrivSubnets|/cloudformation/{STACKNAME}/privsubnets|
 |Internal R53 ZoneID|{STACKNAME}-R53ZoneId|/cloudformation/{STACKNAME}/r53zoneid|
-![VPC diagram](/vpc.png)
 
 ## rds-postgres.yaml
 
@@ -92,3 +94,14 @@ If restoring from database snapshot, use rds-aurora-restore.yaml -template
 |------|-------|----------|
 |RDS Security Group|{STACKNAME}-SecurityGroup| /cloudformation/{STACKNAME}/secgroup |
 |JDBC ConnString|{STACKNAME}-JDBCConnectionString| /cloudformation/{STACKNAME}/jdbc |
+
+## boulerplate.yaml
+
+Boilerplace to start building things into VPC
+
+### Features:
+* ```AWS::CloudFormation::Interface``` for user friendly grouping of parameters 
+* Parameter types for VPC and Subnet
+* Pattern to validate CIRD
+* ```Rules``` to verify subnets are in given VPC
+* Conditional resource
