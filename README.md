@@ -1,6 +1,6 @@
 # AWS Cloudformation templates 
 
-## vpc.yaml
+## vpc.yaml / vpc1nat.yaml
 
 AWS VPC network template
 
