@@ -1,0 +1,122 @@
+{#
+   This is Jinja2 template that will generate Cloudformation YAML template
+   with input from config.json in this same directory.
+
+   Install Jinja CLI
+
+   % pip install jinja-cli
+
+   then render Cloudformation template
+
+   % jinja2 vpc.yaml.j2 config.json > vpc.yaml
+#}
+
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC network v2.0.0
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: VPC CIDR(s)
+        Parameters:
+          - VpcCidr
+          - VpcIntraCidr
+      -
+        Label:
+          default: Public subnets
+        Parameters:
+{% for x in AZ %}
+          - PubCidr{{x.az|upper}}
+{% endfor %}
+      -
+        Label:
+          default: Private subnets
+        Parameters:
+{% for x in AZ %}
+          - PrivCidr{{x.az|upper}}
+{% endfor %}
+      -
+        Label:
+          default: Internal subnets
+        Parameters:
+{% for x in AZ %}
+          - IntraCidr{{x.az|upper}}
+{% endfor %}
+
+
+Parameters:
+
+  VpcCidr:
+    Type: String
+    Description: VPC Primary CIDR
+    Default: "100.0.0.0/16"
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+
+  VpcIntraCidr:
+    Type: String
+    Description: VPC secondary CIDR for intranet connectivity
+    Default: ""
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+
+{% for x in AZ %}
+  PubCidr{{x.az|upper}}:
+    Type: String
+    Description: Public Subnet {{x.az|upper}}
+    Default: ""
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  PrivCidr{{x.az|upper}}:
+    Type: String
+    Description: Private Subnet {{x.az|upper}}
+    Default: ""
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  IntraCidr{{x.az|upper}}:
+    Type: String
+    Description: Intranet Subnet {{x.az|upper}}
+    Default: ""
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  Eip{{x.az|upper}}:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-{{x.az|upper}} (optional)
+    Default: ""
+{% endfor %}
+
+Conditions:
+{% for x in AZ %}
+  Pub{{x.az|upper}}: !Not [!Equals [!Ref PubCidr{{x.az|upper}}, "" ]]  
+  Priv{{x.az|upper}}: !Not [!Equals [!Ref PrivCidr{{x.az|upper}}, "" ]]
+  Intra{{x.az|upper}}: !Not [!Equals [!Ref IntraCidr{{x.az|upper}}, "" ]]
+  Nat{{x.az|upper}}: !And [ Condition: Pub{{x.az|upper}}, Condition: Priv{{x.az|upper}} ]
+  CreateEip{{x.az|upper}}: !And [ Condition: Nat{{x.az|upper}}, !Equals [!Ref Eip{{x.az|upper}}, "" ] ]
+{% endfor %}
+  PubAny: !Or [ Condition: PubA, Condition: PubB, Condition: PubC ]
+  PrivAny: !Or [ Condition: PrivA, Condition: PrivB, Condition: PrivC ]
+  IntraAny: !Or [ Condition: IntraA, Condition: IntraB, Condition: IntraC ]
+  HasIntraCidr: !Not [!Equals [!Ref VpcIntraCidr, "" ]]
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+
+  VPCSecondaryCidr:
+    Type: AWS::EC2::VPCCidrBlock
+    Condition: HasIntraCidr
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref VpcIntraCidr
+
+Outputs:
+
+  VpcId:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VpcId'
