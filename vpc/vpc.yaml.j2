@@ -45,6 +45,11 @@ Metadata:
 {% for x in AZ %}
           - IntraCidr{{x.az|upper}}
 {% endfor %}
+      -
+        Label:
+          default: VPC Endpoints
+        Parameters:
+          - InterfaceEndpoints
 
 
 Parameters:
@@ -52,36 +57,44 @@ Parameters:
   VpcCidr:
     Type: String
     Description: VPC Primary CIDR
-    Default: "100.0.0.0/16"
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    Default: {{VPC.cidr}}
+    AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
 
   VpcIntraCidr:
     Type: String
     Description: VPC secondary CIDR for intranet connectivity
     Default: ""
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+    AllowedPattern: "{{Pattern.VPC_SECONDARY_CIDR}}"
 
 {% for x in AZ %}
   PubCidr{{x.az|upper}}:
     Type: String
     Description: Public Subnet {{x.az|upper}}
-    Default: ""
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+    Default: {{x.pubcidr}}
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
   PrivCidr{{x.az|upper}}:
     Type: String
     Description: Private Subnet {{x.az|upper}}
-    Default: ""
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+    Default: {{x.privcidr}}
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
   IntraCidr{{x.az|upper}}:
     Type: String
     Description: Intranet Subnet {{x.az|upper}}
     Default: ""
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
   Eip{{x.az|upper}}:
     Type: String
     Description: Pre-allocated EIP ID for AZ-{{x.az|upper}} (optional)
     Default: ""
 {% endfor %}
+
+  InterfaceEndpoints:
+    Type: String
+    Description: Enable interface endpoints for AWS services
+    Default: false
+    AllowedValues:
+      - false
+      - true
 
 Conditions:
 {% for x in AZ %}
@@ -95,6 +108,7 @@ Conditions:
   PrivAny: !Or [ Condition: PrivA, Condition: PrivB, Condition: PrivC ]
   IntraAny: !Or [ Condition: IntraA, Condition: IntraB, Condition: IntraC ]
   HasIntraCidr: !Not [!Equals [!Ref VpcIntraCidr, "" ]]
+  EnableInterfaceEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
 
 Resources:
 
@@ -113,6 +127,48 @@ Resources:
       VpcId: !Ref VPC
       CidrBlock: !Ref VpcIntraCidr
 
+  InetGW:
+    Type: AWS::EC2::InternetGateway
+    Condition: PubAny
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName} internet gateway'
+
+  InetGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: PubAny
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InetGW
+
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: PubAny
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public route-table'
+
+  PubDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: PubAny
+    DependsOn: InetGW
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+
+{% for x in AZ %}
+{% include 'subnets.yaml.j2' %}
+{% include 'nat.yaml.j2' %}
+{% include 'routes.yaml.j2' %}
+{% endfor %}
+{% include 's3endpoint.yaml.j2' %}
+{% include 'ifendpoints.yaml.j2' %}
+{% include 'paramstore.yaml.j2' %}
+
 Outputs:
 
   VpcId:
@@ -120,3 +176,29 @@ Outputs:
     Value: !Ref VPC
     Export:
       Name: !Sub '${AWS::StackName}-VpcId'
+
+{# TODO: This is assuming 3 AZ config.json, should be fixed to follow AZs defined in config.json #}
+
+  PubSubnets:
+    Description: Public Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB},${subnetC}'
+      - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
+    Export:
+      Name: !Sub '${AWS::StackName}-PubSubnets'
+
+  PrivSubnets:
+    Description: Private Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB},${subnetC}'
+      - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivSubnets'
+
+  IntraSubnets:
+    Description: Internal Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB},${subnetC}'
+      - { subnetA: !If [ IntraA, !Ref IntraSubnetA, "" ], subnetB: !If [ IntraB, !Ref IntraSubnetB, "" ], subnetC: !If [ IntraC, !Ref IntraSubnetC, "" ] }
+    Export:
+      Name: !Sub '${AWS::StackName}-IntraSubnets'

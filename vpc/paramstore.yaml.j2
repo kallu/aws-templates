@@ -1,0 +1,48 @@
+# Exporting VPC config to Parameter store
+  ParamStoreVpcId:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/vpcid'
+      Description: !Sub '${AWS::StackName} VPC ID' 
+      Type: 'String'
+      Value: !Ref VPC
+
+#  ParamStoreVpcZoneId:
+#    Type: "AWS::SSM::Parameter"
+#    Properties:
+#      Name: !Sub '/cloudformation/${AWS::StackName}/r53zoneid'
+#      Description: !Sub '${AWS::StackName} Internal R53 Zone ID'
+#      Type: 'String'
+#      Value: !If [ HasIntZone, !Ref InternalDnsZone, "" ]
+
+# TODO: These are assuming 3 AZ config.json, should be fixed to follow AZs defined in config.json
+
+  ParamStorePubSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/pubsubnets'
+      Description: !Sub '${AWS::StackName} public subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB},${subnetC}'
+        - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
+
+  ParamStorePrivSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/privsubnets'
+      Description: !Sub '${AWS::StackName} private subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB},${subnetC}'
+        - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
+
+  ParamStoreIntraSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/intrasubnets'
+      Description: !Sub '${AWS::StackName} internal subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB},${subnetC}'
+        - { subnetA: !If [ IntraA, !Ref IntraSubnetA, "" ], subnetB: !If [ IntraB, !Ref IntraSubnetB, "" ], subnetC: !If [ IntraC, !Ref IntraSubnetC, "" ] }

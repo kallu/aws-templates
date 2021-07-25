@@ -1,0 +1,8 @@
+Can not use 100.64.0.0 as primary CIDR but would have to allocate
+something from private CIDR ranges first and then attach 100.64.0.0 as secondary CIDR?
+
+    The CIDR '10.0.0.0/22' is restricted.
+    Use a CIDR from the same private address range as the current VPC CIDR,
+    or use a publicly-routable CIDR. For additional restrictions,
+    see https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide
+

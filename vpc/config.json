@@ -1,13 +1,39 @@
 {
+    "VPC": {
+      "cidr": "100.64.0.0/21"  
+    },
     "AZ": [
         {
-            "az": "a"
+            "az": "a",
+            "pubcidr": "100.64.0.0/24",
+            "privcidr":  "100.64.4.0/24"
         },
         {
-            "az": "b"
+            "az": "b",
+            "pubcidr": "100.64.1.0/24",
+            "privcidr":  "100.64.5.0/24"
         },
         {
-            "az": "c"
+            "az": "c",
+            "pubcidr": "100.64.2.0/24",
+            "privcidr":  "100.64.6.0/24"
         }
+    ],
+    "Pattern": {
+        "VPC_PRIMARY_CIDR": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\\\/(1[6-9]|2[0-8]))$",
+        "VPC_SECONDARY_CIDR": "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$",
+        "VPC_SUBNET_CIDR": "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+    },
+    "InterfaceEndpoints": [
+        { "name": "SSM", "addr": "ssm" },
+        { "name": "EC2", "addr": "ec2" },
+        { "name": "SSMMSG", "addr": "ssmmessages" },
+        { "name": "EC2MSG", "addr": "ec2messages" },
+        { "name": "ECS", "addr": "ecs" },
+        { "name": "ECSAGENT", "addr": "ecs-agent" },
+        { "name": "ECSTELEM", "addr": "ecs-telemetry" },
+        { "name": "ECRAPI", "addr": "ecr.api" },
+        { "name": "ECRDKR", "addr": "ecr.dkr" },
+        { "name": "CFN", "addr": "cloudformation" }
     ]
 }

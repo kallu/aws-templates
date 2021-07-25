@@ -1,0 +1,37 @@
+# Public, private and internal subnets
+  PubSubnet{{x.az|upper}}:
+    Type: AWS::EC2::Subnet
+    Condition: Pub{{x.az|upper}}
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
+      CidrBlock: !Ref PubCidr{{x.az|upper}}
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public subnet-{{x.az|upper}}'
+
+  PrivSubnet{{x.az|upper}}:
+    Type: AWS::EC2::Subnet
+    Condition: Priv{{x.az|upper}}
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
+      CidrBlock: !Ref PrivCidr{{x.az|upper}}
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private subnet-{{x.az|upper}}'
+
+  IntraSubnet{{x.az|upper}}:
+    Type: AWS::EC2::Subnet
+    Condition: Intra{{x.az|upper}}
+    DependsOn: VPCSecondaryCidr
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
+      CidrBlock: !Ref IntraCidr{{x.az|upper}}
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} internal subnet-{{x.az|upper}}'

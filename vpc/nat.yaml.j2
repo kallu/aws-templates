@@ -1,0 +1,16 @@
+# NAT gateway and EIP
+  NatGw{{x.az|upper}}:
+    Type: AWS::EC2::NatGateway
+    Condition: Nat{{x.az|upper}}
+    Properties:
+      SubnetId: !Ref PubSubnet{{x.az|upper}}
+      AllocationId: !If [ CreateEip{{x.az|upper}}, !GetAtt NatEip{{x.az|upper}}.AllocationId, !Ref Eip{{x.az|upper}} ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-{{x.az|upper}}'
+
+  NatEip{{x.az|upper}}:
+    Type: AWS::EC2::EIP
+    Condition: CreateEip{{x.az|upper}}
+    Properties:
+      Domain: vpc

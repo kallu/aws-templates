@@ -46,6 +46,11 @@ Metadata:
 
           - IntraCidrC
 
+      -
+        Label:
+          default: VPC Endpoints
+        Parameters:
+          - InterfaceEndpoints
 
 
 Parameters:
@@ -53,7 +58,7 @@ Parameters:
   VpcCidr:
     Type: String
     Description: VPC Primary CIDR
-    Default: "100.0.0.0/16"
+    Default: 100.64.0.0/21
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
 
   VpcIntraCidr:
@@ -66,12 +71,12 @@ Parameters:
   PubCidrA:
     Type: String
     Description: Public Subnet A
-    Default: ""
+    Default: 100.64.0.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   PrivCidrA:
     Type: String
     Description: Private Subnet A
-    Default: ""
+    Default: 100.64.4.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   IntraCidrA:
     Type: String
@@ -86,12 +91,12 @@ Parameters:
   PubCidrB:
     Type: String
     Description: Public Subnet B
-    Default: ""
+    Default: 100.64.1.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   PrivCidrB:
     Type: String
     Description: Private Subnet B
-    Default: ""
+    Default: 100.64.5.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   IntraCidrB:
     Type: String
@@ -106,12 +111,12 @@ Parameters:
   PubCidrC:
     Type: String
     Description: Public Subnet C
-    Default: ""
+    Default: 100.64.2.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   PrivCidrC:
     Type: String
     Description: Private Subnet C
-    Default: ""
+    Default: 100.64.6.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   IntraCidrC:
     Type: String
@@ -123,6 +128,14 @@ Parameters:
     Description: Pre-allocated EIP ID for AZ-C (optional)
     Default: ""
 
+
+  InterfaceEndpoints:
+    Type: String
+    Description: Enable interface endpoints for AWS services
+    Default: false
+    AllowedValues:
+      - false
+      - true
 
 Conditions:
 
@@ -148,6 +161,7 @@ Conditions:
   PrivAny: !Or [ Condition: PrivA, Condition: PrivB, Condition: PrivC ]
   IntraAny: !Or [ Condition: IntraA, Condition: IntraB, Condition: IntraC ]
   HasIntraCidr: !Not [!Equals [!Ref VpcIntraCidr, "" ]]
+  EnableInterfaceEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
 
 Resources:
 
@@ -166,6 +180,688 @@ Resources:
       VpcId: !Ref VPC
       CidrBlock: !Ref VpcIntraCidr
 
+  InetGW:
+    Type: AWS::EC2::InternetGateway
+    Condition: PubAny
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName} internet gateway'
+
+  InetGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: PubAny
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InetGW
+
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: PubAny
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public route-table'
+
+  PubDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: PubAny
+    DependsOn: InetGW
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+
+
+# Public, private and internal subnets
+  PubSubnetA:
+    Type: AWS::EC2::Subnet
+    Condition: PubA
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref PubCidrA
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public subnet-A'
+
+  PrivSubnetA:
+    Type: AWS::EC2::Subnet
+    Condition: PrivA
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref PrivCidrA
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private subnet-A'
+
+  IntraSubnetA:
+    Type: AWS::EC2::Subnet
+    Condition: IntraA
+    DependsOn: VPCSecondaryCidr
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref IntraCidrA
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} internal subnet-A'
+
+# NAT gateway and EIP
+  NatGwA:
+    Type: AWS::EC2::NatGateway
+    Condition: NatA
+    Properties:
+      SubnetId: !Ref PubSubnetA
+      AllocationId: !If [ CreateEipA, !GetAtt NatEipA.AllocationId, !Ref EipA ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-A'
+
+  NatEipA:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipA
+    Properties:
+      Domain: vpc
+
+# Private and public subnet routing
+
+  PrivRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Condition: PrivA
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private route-table-A'
+
+  PrivSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PrivA
+    Properties:
+      RouteTableId: !Ref PrivRouteTableA
+      SubnetId: !Ref PrivSubnetA
+
+  PrivDefaultRouteA:
+    Type: AWS::EC2::Route
+    Condition: NatA
+    DependsOn: NatGwA
+    Properties:
+      RouteTableId: !Ref PrivRouteTableA
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwA
+
+  IntraRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Condition: IntraA
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} internal route-table-A'
+
+  PubSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PubA
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref PubSubnetA
+
+
+# Public, private and internal subnets
+  PubSubnetB:
+    Type: AWS::EC2::Subnet
+    Condition: PubB
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref PubCidrB
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public subnet-B'
+
+  PrivSubnetB:
+    Type: AWS::EC2::Subnet
+    Condition: PrivB
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref PrivCidrB
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private subnet-B'
+
+  IntraSubnetB:
+    Type: AWS::EC2::Subnet
+    Condition: IntraB
+    DependsOn: VPCSecondaryCidr
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref IntraCidrB
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} internal subnet-B'
+
+# NAT gateway and EIP
+  NatGwB:
+    Type: AWS::EC2::NatGateway
+    Condition: NatB
+    Properties:
+      SubnetId: !Ref PubSubnetB
+      AllocationId: !If [ CreateEipB, !GetAtt NatEipB.AllocationId, !Ref EipB ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-B'
+
+  NatEipB:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipB
+    Properties:
+      Domain: vpc
+
+# Private and public subnet routing
+
+  PrivRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Condition: PrivB
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private route-table-B'
+
+  PrivSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PrivB
+    Properties:
+      RouteTableId: !Ref PrivRouteTableB
+      SubnetId: !Ref PrivSubnetB
+
+  PrivDefaultRouteB:
+    Type: AWS::EC2::Route
+    Condition: NatB
+    DependsOn: NatGwB
+    Properties:
+      RouteTableId: !Ref PrivRouteTableB
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwB
+
+  IntraRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Condition: IntraB
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} internal route-table-B'
+
+  PubSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PubB
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref PubSubnetB
+
+
+# Public, private and internal subnets
+  PubSubnetC:
+    Type: AWS::EC2::Subnet
+    Condition: PubC
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref PubCidrC
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public subnet-C'
+
+  PrivSubnetC:
+    Type: AWS::EC2::Subnet
+    Condition: PrivC
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref PrivCidrC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private subnet-C'
+
+  IntraSubnetC:
+    Type: AWS::EC2::Subnet
+    Condition: IntraC
+    DependsOn: VPCSecondaryCidr
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref IntraCidrC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} internal subnet-C'
+
+# NAT gateway and EIP
+  NatGwC:
+    Type: AWS::EC2::NatGateway
+    Condition: NatC
+    Properties:
+      SubnetId: !Ref PubSubnetC
+      AllocationId: !If [ CreateEipC, !GetAtt NatEipC.AllocationId, !Ref EipC ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-C'
+
+  NatEipC:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipC
+    Properties:
+      Domain: vpc
+
+# Private and public subnet routing
+
+  PrivRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Condition: PrivC
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private route-table-C'
+
+  PrivSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PrivC
+    Properties:
+      RouteTableId: !Ref PrivRouteTableC
+      SubnetId: !Ref PrivSubnetC
+
+  PrivDefaultRouteC:
+    Type: AWS::EC2::Route
+    Condition: NatC
+    DependsOn: NatGwC
+    Properties:
+      RouteTableId: !Ref PrivRouteTableC
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwC
+
+  IntraRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Condition: IntraC
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} internal route-table-C'
+
+  PubSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: PubC
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref PubSubnetC
+
+
+  S3vpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
+      VpcId: !Ref VPC
+      RouteTableIds:
+      - !If
+        - PubAny
+        - !Ref PubRouteTable
+        - !Ref AWS::NoValue
+
+      - !If
+        - PrivA
+        - !Ref PrivRouteTableA
+        - !Ref AWS::NoValue
+      - !If
+        - IntraA
+        - !Ref IntraRouteTableA
+        - !Ref AWS::NoValue
+
+      - !If
+        - PrivB
+        - !Ref PrivRouteTableB
+        - !Ref AWS::NoValue
+      - !If
+        - IntraB
+        - !Ref IntraRouteTableB
+        - !Ref AWS::NoValue
+
+      - !If
+        - PrivC
+        - !Ref PrivRouteTableC
+        - !Ref AWS::NoValue
+      - !If
+        - IntraC
+        - !Ref IntraRouteTableC
+        - !Ref AWS::NoValue
+
+  VpcEndpointSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      GroupDescription: !Sub "VPC Interface endpoint sec.group ${AWS::StackName}"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        -
+          CidrIp: !Ref VpcCidr
+          Description: Allow HTTPS from VPC CIDR
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+        -
+          CidrIp: !If [ IntraAny, !Ref VpcIntraCidr, !Ref AWS::NoValue ]
+          Description: Allow HTTPS from VPC secondary CIDR
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+
+
+
+  SSMvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssm'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  EC2vpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ec2'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  SSMMSGvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ssmmessages'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  EC2MSGvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ec2messages'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  ECSvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecs'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  ECSAGENTvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecs-agent'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  ECSTELEMvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecs-telemetry'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  ECRAPIvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecr.api'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  ECRDKRvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecr.dkr'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+  CFNvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.cloudformation'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      - !If
+        - PrivA
+        - !Ref PrivSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivSubnetC
+        - !Ref AWS::NoValue
+
+# Exporting VPC config to Parameter store
+  ParamStoreVpcId:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/vpcid'
+      Description: !Sub '${AWS::StackName} VPC ID' 
+      Type: 'String'
+      Value: !Ref VPC
+
+#  ParamStoreVpcZoneId:
+#    Type: "AWS::SSM::Parameter"
+#    Properties:
+#      Name: !Sub '/cloudformation/${AWS::StackName}/r53zoneid'
+#      Description: !Sub '${AWS::StackName} Internal R53 Zone ID'
+#      Type: 'String'
+#      Value: !If [ HasIntZone, !Ref InternalDnsZone, "" ]
+
+# TODO: These are assuming 3 AZ config.json, should be fixed to follow AZs defined in config.json
+
+  ParamStorePubSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/pubsubnets'
+      Description: !Sub '${AWS::StackName} public subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB},${subnetC}'
+        - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
+
+  ParamStorePrivSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/privsubnets'
+      Description: !Sub '${AWS::StackName} private subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB},${subnetC}'
+        - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
+
+  ParamStoreIntraSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/intrasubnets'
+      Description: !Sub '${AWS::StackName} internal subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB},${subnetC}'
+        - { subnetA: !If [ IntraA, !Ref IntraSubnetA, "" ], subnetB: !If [ IntraB, !Ref IntraSubnetB, "" ], subnetC: !If [ IntraC, !Ref IntraSubnetC, "" ] }
+
+
 Outputs:
 
   VpcId:
@@ -173,3 +869,29 @@ Outputs:
     Value: !Ref VPC
     Export:
       Name: !Sub '${AWS::StackName}-VpcId'
+
+
+
+  PubSubnets:
+    Description: Public Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB},${subnetC}'
+      - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
+    Export:
+      Name: !Sub '${AWS::StackName}-PubSubnets'
+
+  PrivSubnets:
+    Description: Private Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB},${subnetC}'
+      - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivSubnets'
+
+  IntraSubnets:
+    Description: Internal Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB},${subnetC}'
+      - { subnetA: !If [ IntraA, !Ref IntraSubnetA, "" ], subnetB: !If [ IntraB, !Ref IntraSubnetB, "" ], subnetC: !If [ IntraC, !Ref IntraSubnetC, "" ] }
+    Export:
+      Name: !Sub '${AWS::StackName}-IntraSubnets'

@@ -1,0 +1,21 @@
+  S3vpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
+      VpcId: !Ref VPC
+      RouteTableIds:
+      - !If
+        - PubAny
+        - !Ref PubRouteTable
+        - !Ref AWS::NoValue
+{% for x in AZ %}
+      - !If
+        - Priv{{x.az|upper}}
+        - !Ref PrivRouteTable{{x.az|upper}}
+        - !Ref AWS::NoValue
+      - !If
+        - Intra{{x.az|upper}}
+        - !Ref IntraRouteTable{{x.az|upper}}
+        - !Ref AWS::NoValue
+{% endfor %}
