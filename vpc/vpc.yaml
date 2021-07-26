@@ -143,18 +143,21 @@ Conditions:
   PrivA: !Not [!Equals [!Ref PrivCidrA, "" ]]
   IntraA: !Not [!Equals [!Ref IntraCidrA, "" ]]
   NatA: !And [ Condition: PubA, Condition: PrivA ]
+  NatIntraA: !And [ Condition: IntraA, Condition: PrivA ]
   CreateEipA: !And [ Condition: NatA, !Equals [!Ref EipA, "" ] ]
 
   PubB: !Not [!Equals [!Ref PubCidrB, "" ]]  
   PrivB: !Not [!Equals [!Ref PrivCidrB, "" ]]
   IntraB: !Not [!Equals [!Ref IntraCidrB, "" ]]
   NatB: !And [ Condition: PubB, Condition: PrivB ]
+  NatIntraB: !And [ Condition: IntraB, Condition: PrivB ]
   CreateEipB: !And [ Condition: NatB, !Equals [!Ref EipB, "" ] ]
 
   PubC: !Not [!Equals [!Ref PubCidrC, "" ]]  
   PrivC: !Not [!Equals [!Ref PrivCidrC, "" ]]
   IntraC: !Not [!Equals [!Ref IntraCidrC, "" ]]
   NatC: !And [ Condition: PubC, Condition: PrivC ]
+  NatIntraC: !And [ Condition: IntraC, Condition: PrivC ]
   CreateEipC: !And [ Condition: NatC, !Equals [!Ref EipC, "" ] ]
 
   PubAny: !Or [ Condition: PubA, Condition: PubB, Condition: PubC ]
@@ -252,11 +255,12 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} internal subnet-A'
 
-# NAT gateway and EIP
+# Public NAT gateway and EIP
   NatGwA:
     Type: AWS::EC2::NatGateway
     Condition: NatA
     Properties:
+      ConnectivityType: public
       SubnetId: !Ref PubSubnetA
       AllocationId: !If [ CreateEipA, !GetAtt NatEipA.AllocationId, !Ref EipA ]
       Tags:
@@ -268,6 +272,18 @@ Resources:
     Condition: CreateEipA
     Properties:
       Domain: vpc
+
+# Internal NAT gateway
+
+  NatGwIntraA:
+    Type: AWS::EC2::NatGateway
+    Condition: NatIntraA
+    Properties:
+      ConnectivityType: private
+      SubnetId: !Ref IntraSubnetA
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} InternalNAT-A'
 
 # Private and public subnet routing
 
@@ -304,6 +320,15 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} internal route-table-A'
+
+  IntraDefaultRouteA:
+    Type: AWS::EC2::Route
+    Condition: NatIntraA
+    DependsOn: NatGwIntraA
+    Properties:
+      RouteTableId: !Ref IntraRouteTableA
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwIntraA
 
   PubSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -351,11 +376,12 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} internal subnet-B'
 
-# NAT gateway and EIP
+# Public NAT gateway and EIP
   NatGwB:
     Type: AWS::EC2::NatGateway
     Condition: NatB
     Properties:
+      ConnectivityType: public
       SubnetId: !Ref PubSubnetB
       AllocationId: !If [ CreateEipB, !GetAtt NatEipB.AllocationId, !Ref EipB ]
       Tags:
@@ -367,6 +393,18 @@ Resources:
     Condition: CreateEipB
     Properties:
       Domain: vpc
+
+# Internal NAT gateway
+
+  NatGwIntraB:
+    Type: AWS::EC2::NatGateway
+    Condition: NatIntraB
+    Properties:
+      ConnectivityType: private
+      SubnetId: !Ref IntraSubnetB
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} InternalNAT-B'
 
 # Private and public subnet routing
 
@@ -403,6 +441,15 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} internal route-table-B'
+
+  IntraDefaultRouteB:
+    Type: AWS::EC2::Route
+    Condition: NatIntraB
+    DependsOn: NatGwIntraB
+    Properties:
+      RouteTableId: !Ref IntraRouteTableB
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwIntraB
 
   PubSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -450,11 +497,12 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} internal subnet-C'
 
-# NAT gateway and EIP
+# Public NAT gateway and EIP
   NatGwC:
     Type: AWS::EC2::NatGateway
     Condition: NatC
     Properties:
+      ConnectivityType: public
       SubnetId: !Ref PubSubnetC
       AllocationId: !If [ CreateEipC, !GetAtt NatEipC.AllocationId, !Ref EipC ]
       Tags:
@@ -466,6 +514,18 @@ Resources:
     Condition: CreateEipC
     Properties:
       Domain: vpc
+
+# Internal NAT gateway
+
+  NatGwIntraC:
+    Type: AWS::EC2::NatGateway
+    Condition: NatIntraC
+    Properties:
+      ConnectivityType: private
+      SubnetId: !Ref IntraSubnetC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} InternalNAT-C'
 
 # Private and public subnet routing
 
@@ -502,6 +562,15 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} internal route-table-C'
+
+  IntraDefaultRouteC:
+    Type: AWS::EC2::Route
+    Condition: NatIntraC
+    DependsOn: NatGwIntraC
+    Properties:
+      RouteTableId: !Ref IntraRouteTableC
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwIntraC
 
   PubSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
