@@ -34,6 +34,15 @@
         - Key: Name
           Value: !Sub '${AWS::StackName} internal route-table-{{x.az|upper}}'
 
+  IntraDefaultRoute{{x.az|upper}}:
+    Type: AWS::EC2::Route
+    Condition: NatIntra{{x.az|upper}}
+    DependsOn: NatGwIntra{{x.az|upper}}
+    Properties:
+      RouteTableId: !Ref IntraRouteTable{{x.az|upper}}
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwIntra{{x.az|upper}}
+
   PubSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: Pub{{x.az|upper}}

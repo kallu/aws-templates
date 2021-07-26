@@ -102,6 +102,7 @@ Conditions:
   Priv{{x.az|upper}}: !Not [!Equals [!Ref PrivCidr{{x.az|upper}}, "" ]]
   Intra{{x.az|upper}}: !Not [!Equals [!Ref IntraCidr{{x.az|upper}}, "" ]]
   Nat{{x.az|upper}}: !And [ Condition: Pub{{x.az|upper}}, Condition: Priv{{x.az|upper}} ]
+  NatPriv{{x.az|upper}}: !And [ Condition: Intra{{x.az|upper}}, Condition: Priv{{x.az|upper}} ]
   CreateEip{{x.az|upper}}: !And [ Condition: Nat{{x.az|upper}}, !Equals [!Ref Eip{{x.az|upper}}, "" ] ]
 {% endfor %}
   PubAny: !Or [ Condition: PubA, Condition: PubB, Condition: PubC ]
