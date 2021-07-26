@@ -58,7 +58,7 @@ Parameters:
   VpcCidr:
     Type: String
     Description: VPC Primary CIDR
-    Default: 100.64.0.0/21
+    Default: 10.0.0.0/21
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
 
   VpcIntraCidr:
@@ -71,12 +71,12 @@ Parameters:
   PubCidrA:
     Type: String
     Description: Public Subnet A
-    Default: 100.64.0.0/24
+    Default: 10.0.0.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   PrivCidrA:
     Type: String
     Description: Private Subnet A
-    Default: 100.64.4.0/24
+    Default: 10.0.4.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   IntraCidrA:
     Type: String
@@ -91,12 +91,12 @@ Parameters:
   PubCidrB:
     Type: String
     Description: Public Subnet B
-    Default: 100.64.1.0/24
+    Default: 10.0.1.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   PrivCidrB:
     Type: String
     Description: Private Subnet B
-    Default: 100.64.5.0/24
+    Default: 10.0.5.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   IntraCidrB:
     Type: String
@@ -111,12 +111,12 @@ Parameters:
   PubCidrC:
     Type: String
     Description: Public Subnet C
-    Default: 100.64.2.0/24
+    Default: 10.0.2.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   PrivCidrC:
     Type: String
     Description: Private Subnet C
-    Default: 100.64.6.0/24
+    Default: 10.0.6.0/24
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   IntraCidrC:
     Type: String
