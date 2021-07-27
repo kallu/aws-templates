@@ -1,0 +1,13 @@
+  TGWAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Condition: AttachTransitGateway
+    Properties: 
+      SubnetIds: 
+      {%- for x in AZ %}
+      - !If
+        - Intra{{x.az|upper}}
+        - !Ref IntraSubnet{{x.az|upper}}
+        - !Ref AWS::NoValue
+      {%- endfor %}
+      TransitGatewayId: !Ref TransitGwId
+      VpcId: !Ref VPC
