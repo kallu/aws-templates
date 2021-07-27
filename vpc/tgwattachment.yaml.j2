@@ -11,3 +11,6 @@
       {%- endfor %}
       TransitGatewayId: !Ref TransitGwId
       VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
