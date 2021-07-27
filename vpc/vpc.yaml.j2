@@ -63,35 +63,35 @@ Parameters:
   VpcCidr:
     Type: String
     Description: VPC Primary CIDR
-    Default: {{VPC.cidr}}
+    Default: '{{VPC.cidr}}'
     AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
 
   VpcIntraCidr:
     Type: String
     Description: VPC secondary CIDR for intranet connectivity
-    Default: {{VPC.secondary_cidr}}
+    Default: '{{VPC.secondary_cidr}}'
     AllowedPattern: "{{Pattern.VPC_SECONDARY_CIDR}}"
 
 {% for x in AZ %}
   PubCidr{{x.az|upper}}:
     Type: String
     Description: Public Subnet {{x.az|upper}}
-    Default: {{x.pubcidr}}
+    Default: '{{x.pubcidr}}'
     AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
   PrivCidr{{x.az|upper}}:
     Type: String
     Description: Private Subnet {{x.az|upper}}
-    Default: {{x.privcidr}}
+    Default: '{{x.privcidr}}'
     AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
   IntraCidr{{x.az|upper}}:
     Type: String
     Description: Intranet Subnet {{x.az|upper}}
-    Default: {{x.intracidr}}
+    Default: '{{x.intracidr}}'
     AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
   Eip{{x.az|upper}}:
     Type: String
     Description: Pre-allocated EIP ID for AZ-{{x.az|upper}} (optional)
-    Default: ""
+    Default: ''
 {% endfor %}
 
   TransitGwId:
@@ -132,6 +132,9 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
 
   VPCSecondaryCidr:
     Type: AWS::EC2::VPCCidrBlock
