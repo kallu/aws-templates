@@ -10,3 +10,11 @@ something from private CIDR ranges first and then attach 100.64.0.0 as secondary
 TGWAttachement changes will always create a new attachment, even Tags,
 but because there is already attachment in given AZ (CFN will first try to create
 a new before deleting the old) it will fail -> TGW attachment can not be changed :-(
+
+TODO
+
+- Attach intranet subnets to correct route table
+- Add route for intranet subnets to tgw (when attached)
+- Verify private subnets have route to internal NAT (when available)
+- Internal NAT should be present only when TGW is attached,
+  creating NATs when there is no connectivity doesnt make sense.
