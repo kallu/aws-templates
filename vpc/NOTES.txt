@@ -6,3 +6,7 @@ something from private CIDR ranges first and then attach 100.64.0.0 as secondary
     or use a publicly-routable CIDR. For additional restrictions,
     see https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide
 
+
+TGWAttachement changes will always create a new attachment, even Tags,
+but because there is already attachment in given AZ (CFN will first try to create
+a new before deleting the old) it will fail -> TGW attachment can not be changed :-(
