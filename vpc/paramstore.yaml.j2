@@ -1,4 +1,3 @@
-# Exporting VPC config to Parameter store
   ParamStoreVpcId:
     Type: "AWS::SSM::Parameter"
     Properties:
@@ -15,8 +14,6 @@
 #      Type: 'String'
 #      Value: !If [ HasIntZone, !Ref InternalDnsZone, "" ]
 
-# TODO: These are assuming 3 AZ config.json, should be fixed to follow AZs defined in config.json
-
   ParamStorePubSubnets:
     Type: "AWS::SSM::Parameter"
     Properties:
@@ -24,8 +21,8 @@
       Description: !Sub '${AWS::StackName} public subnets'
       Type: 'StringList'
       Value: !Sub
-        - '${subnetA},${subnetB},${subnetC}'
-        - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
+        - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+        - { {{ ForAllAZs(AZ,'subnetX: !If [ PubX, !Ref PubSubnetX, "" ]') }} }
 
   ParamStorePrivSubnets:
     Type: "AWS::SSM::Parameter"
@@ -34,8 +31,8 @@
       Description: !Sub '${AWS::StackName} private subnets'
       Type: 'StringList'
       Value: !Sub
-        - '${subnetA},${subnetB},${subnetC}'
-        - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
+        - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+        - { {{ ForAllAZs(AZ,'subnetX: !If [ PrivX, !Ref PrivSubnetX, "" ]') }} }
 
   ParamStoreIntraSubnets:
     Type: "AWS::SSM::Parameter"
@@ -44,5 +41,5 @@
       Description: !Sub '${AWS::StackName} internal subnets'
       Type: 'StringList'
       Value: !Sub
-        - '${subnetA},${subnetB},${subnetC}'
-        - { subnetA: !If [ IntraA, !Ref IntraSubnetA, "" ], subnetB: !If [ IntraB, !Ref IntraSubnetB, "" ], subnetC: !If [ IntraC, !Ref IntraSubnetC, "" ] }
+        - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+        - { {{ ForAllAZs(AZ,'subnetX: !If [ IntraX, !Ref IntraSubnetX, "" ]') }} }

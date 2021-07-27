@@ -18,7 +18,6 @@
           FromPort: 443
           ToPort: 443
 
-{# TODO: This is assuming 3 AZ config.json, should be fixed to follow AZs defined in config.json #}
 {% for x in InterfaceEndpoints %}
   {{x.name}}vpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -31,16 +30,10 @@
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      {% for y in AZ %}
       - !If
-        - PrivA
-        - !Ref PrivSubnetA
+        - Priv{{y.az.upper()}}
+        - !Ref PrivSubnet{{y.az.upper()}}
         - !Ref AWS::NoValue
-      - !If
-        - PrivB
-        - !Ref PrivSubnetB
-        - !Ref AWS::NoValue
-      - !If
-        - PrivC
-        - !Ref PrivSubnetC
-        - !Ref AWS::NoValue
+      {% endfor %}
 {% endfor %}

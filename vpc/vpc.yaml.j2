@@ -11,6 +11,13 @@
    % jinja2 vpc.yaml.j2 config.json > vpc.yaml
 #}
 
+{# Comma separated list of strings with letter X replaced by AZ identifier in caps #}
+{% macro ForAllAZs(az,format) -%}
+{% for x in az -%}
+{{ format|replace('X', x.az.upper()) }}{{ ", " if not loop.last else "" }}
+{%- endfor %}
+{%- endmacro %}
+
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: VPC network v2.0.0
@@ -28,29 +35,28 @@ Metadata:
         Label:
           default: Public subnets
         Parameters:
-{% for x in AZ %}
+{%- for x in AZ %}
           - PubCidr{{x.az|upper}}
-{% endfor %}
+{%- endfor %}
       -
         Label:
           default: Private subnets
         Parameters:
-{% for x in AZ %}
+{%- for x in AZ %}
           - PrivCidr{{x.az|upper}}
-{% endfor %}
+{%- endfor %}
       -
         Label:
           default: Internal subnets
         Parameters:
-{% for x in AZ %}
+{%- for x in AZ %}
           - IntraCidr{{x.az|upper}}
-{% endfor %}
+{%- endfor %}
       -
         Label:
           default: VPC Endpoints
         Parameters:
           - InterfaceEndpoints
-
 
 Parameters:
 
@@ -105,9 +111,9 @@ Conditions:
   NatIntra{{x.az|upper}}: !And [ Condition: Intra{{x.az|upper}}, Condition: Priv{{x.az|upper}} ]
   CreateEip{{x.az|upper}}: !And [ Condition: Nat{{x.az|upper}}, !Equals [!Ref Eip{{x.az|upper}}, "" ] ]
 {% endfor %}
-  PubAny: !Or [ Condition: PubA, Condition: PubB, Condition: PubC ]
-  PrivAny: !Or [ Condition: PrivA, Condition: PrivB, Condition: PrivC ]
-  IntraAny: !Or [ Condition: IntraA, Condition: IntraB, Condition: IntraC ]
+  PubAny: !Or [ {{ ForAllAZs(AZ, 'Condition: PubX') }} ]
+  PrivAny: !Or [ {{ ForAllAZs(AZ, 'Condition: PrivX') }} ]
+  IntraAny: !Or [ {{ ForAllAZs(AZ, 'Condition: IntraX') }} ]
   HasIntraCidr: !Not [!Equals [!Ref VpcIntraCidr, "" ]]
   EnableInterfaceEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
 
@@ -146,28 +152,26 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-VpcId'
 
-{# TODO: This is assuming 3 AZ config.json, should be fixed to follow AZs defined in config.json #}
-
   PubSubnets:
     Description: Public Subnets
     Value: !Sub
-      - '${subnetA},${subnetB},${subnetC}'
-      - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
+      - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+      - { {{ ForAllAZs(AZ,'subnetX: !If [ PubX, !Ref PubSubnetX, "" ]') }} }
     Export:
       Name: !Sub '${AWS::StackName}-PubSubnets'
 
   PrivSubnets:
     Description: Private Subnets
     Value: !Sub
-      - '${subnetA},${subnetB},${subnetC}'
-      - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
+      - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+      - { {{ ForAllAZs(AZ,'subnetX: !If [ PrivX, !Ref PrivSubnetX, "" ]') }} }
     Export:
       Name: !Sub '${AWS::StackName}-PrivSubnets'
 
   IntraSubnets:
     Description: Internal Subnets
     Value: !Sub
-      - '${subnetA},${subnetB},${subnetC}'
-      - { subnetA: !If [ IntraA, !Ref IntraSubnetA, "" ], subnetB: !If [ IntraB, !Ref IntraSubnetB, "" ], subnetC: !If [ IntraC, !Ref IntraSubnetC, "" ] }
+      - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+      - { {{ ForAllAZs(AZ,'subnetX: !If [ IntraX, !Ref IntraSubnetX, "" ]') }} }
     Export:
       Name: !Sub '${AWS::StackName}-IntraSubnets'

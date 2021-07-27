@@ -1,5 +1,8 @@
 
 
+
+
+
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: VPC network v2.0.0
@@ -17,41 +20,28 @@ Metadata:
         Label:
           default: Public subnets
         Parameters:
-
           - PubCidrA
-
           - PubCidrB
-
           - PubCidrC
-
       -
         Label:
           default: Private subnets
         Parameters:
-
           - PrivCidrA
-
           - PrivCidrB
-
           - PrivCidrC
-
       -
         Label:
           default: Internal subnets
         Parameters:
-
           - IntraCidrA
-
           - IntraCidrB
-
           - IntraCidrC
-
       -
         Label:
           default: VPC Endpoints
         Parameters:
           - InterfaceEndpoints
-
 
 Parameters:
 
@@ -183,8 +173,6 @@ Resources:
       VpcId: !Ref VPC
       CidrBlock: !Ref VpcIntraCidr
 
-# Internet access via VPC IGW
-
   InetGW:
     Type: AWS::EC2::InternetGateway
     Condition: PubAny
@@ -219,7 +207,6 @@ Resources:
       GatewayId: !Ref InetGW
 
 
-# Public, private and internal subnets
   PubSubnetA:
     Type: AWS::EC2::Subnet
     Condition: PubA
@@ -257,7 +244,6 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} internal subnet-A'
 
-# Public NAT gateway and EIP
   NatGwA:
     Type: AWS::EC2::NatGateway
     Condition: NatA
@@ -275,8 +261,6 @@ Resources:
     Properties:
       Domain: vpc
 
-# Internal NAT gateway
-
   NatGwIntraA:
     Type: AWS::EC2::NatGateway
     Condition: NatIntraA
@@ -287,7 +271,6 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} InternalNAT-A'
 
-# Private and public subnet routing
 
   PrivRouteTableA:
     Type: AWS::EC2::RouteTable
@@ -340,7 +323,6 @@ Resources:
       SubnetId: !Ref PubSubnetA
 
 
-# Public, private and internal subnets
   PubSubnetB:
     Type: AWS::EC2::Subnet
     Condition: PubB
@@ -378,7 +360,6 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} internal subnet-B'
 
-# Public NAT gateway and EIP
   NatGwB:
     Type: AWS::EC2::NatGateway
     Condition: NatB
@@ -396,8 +377,6 @@ Resources:
     Properties:
       Domain: vpc
 
-# Internal NAT gateway
-
   NatGwIntraB:
     Type: AWS::EC2::NatGateway
     Condition: NatIntraB
@@ -408,7 +387,6 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} InternalNAT-B'
 
-# Private and public subnet routing
 
   PrivRouteTableB:
     Type: AWS::EC2::RouteTable
@@ -461,7 +439,6 @@ Resources:
       SubnetId: !Ref PubSubnetB
 
 
-# Public, private and internal subnets
   PubSubnetC:
     Type: AWS::EC2::Subnet
     Condition: PubC
@@ -499,7 +476,6 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} internal subnet-C'
 
-# Public NAT gateway and EIP
   NatGwC:
     Type: AWS::EC2::NatGateway
     Condition: NatC
@@ -517,8 +493,6 @@ Resources:
     Properties:
       Domain: vpc
 
-# Internal NAT gateway
-
   NatGwIntraC:
     Type: AWS::EC2::NatGateway
     Condition: NatIntraC
@@ -529,7 +503,6 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} InternalNAT-C'
 
-# Private and public subnet routing
 
   PrivRouteTableC:
     Type: AWS::EC2::RouteTable
@@ -642,7 +615,6 @@ Resources:
           ToPort: 443
 
 
-
   SSMvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Condition: EnableInterfaceEndpoints
@@ -654,18 +626,22 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
   EC2vpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -678,18 +654,22 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
   SSMMSGvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -702,18 +682,22 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
   EC2MSGvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -726,18 +710,22 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
   ECSvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -750,18 +738,22 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
   ECSAGENTvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -774,18 +766,22 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
   ECSTELEMvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -798,18 +794,22 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
   ECRAPIvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -822,18 +822,22 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
   ECRDKRvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -846,18 +850,22 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
   CFNvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -870,20 +878,23 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
+      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
+      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
+      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
+      
 
-# Exporting VPC config to Parameter store
   ParamStoreVpcId:
     Type: "AWS::SSM::Parameter"
     Properties:
@@ -900,8 +911,6 @@ Resources:
 #      Type: 'String'
 #      Value: !If [ HasIntZone, !Ref InternalDnsZone, "" ]
 
-# TODO: These are assuming 3 AZ config.json, should be fixed to follow AZs defined in config.json
-
   ParamStorePubSubnets:
     Type: "AWS::SSM::Parameter"
     Properties:
@@ -909,7 +918,7 @@ Resources:
       Description: !Sub '${AWS::StackName} public subnets'
       Type: 'StringList'
       Value: !Sub
-        - '${subnetA},${subnetB},${subnetC}'
+        - '${subnetA}, ${subnetB}, ${subnetC}'
         - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
 
   ParamStorePrivSubnets:
@@ -919,7 +928,7 @@ Resources:
       Description: !Sub '${AWS::StackName} private subnets'
       Type: 'StringList'
       Value: !Sub
-        - '${subnetA},${subnetB},${subnetC}'
+        - '${subnetA}, ${subnetB}, ${subnetC}'
         - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
 
   ParamStoreIntraSubnets:
@@ -929,7 +938,7 @@ Resources:
       Description: !Sub '${AWS::StackName} internal subnets'
       Type: 'StringList'
       Value: !Sub
-        - '${subnetA},${subnetB},${subnetC}'
+        - '${subnetA}, ${subnetB}, ${subnetC}'
         - { subnetA: !If [ IntraA, !Ref IntraSubnetA, "" ], subnetB: !If [ IntraB, !Ref IntraSubnetB, "" ], subnetC: !If [ IntraC, !Ref IntraSubnetC, "" ] }
 
 
@@ -941,12 +950,10 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-VpcId'
 
-
-
   PubSubnets:
     Description: Public Subnets
     Value: !Sub
-      - '${subnetA},${subnetB},${subnetC}'
+      - '${subnetA}, ${subnetB}, ${subnetC}'
       - { subnetA: !If [ PubA, !Ref PubSubnetA, "" ], subnetB: !If [ PubB, !Ref PubSubnetB, "" ], subnetC: !If [ PubC, !Ref PubSubnetC, "" ] }
     Export:
       Name: !Sub '${AWS::StackName}-PubSubnets'
@@ -954,7 +961,7 @@ Outputs:
   PrivSubnets:
     Description: Private Subnets
     Value: !Sub
-      - '${subnetA},${subnetB},${subnetC}'
+      - '${subnetA}, ${subnetB}, ${subnetC}'
       - { subnetA: !If [ PrivA, !Ref PrivSubnetA, "" ], subnetB: !If [ PrivB, !Ref PrivSubnetB, "" ], subnetC: !If [ PrivC, !Ref PrivSubnetC, "" ] }
     Export:
       Name: !Sub '${AWS::StackName}-PrivSubnets'
@@ -962,7 +969,7 @@ Outputs:
   IntraSubnets:
     Description: Internal Subnets
     Value: !Sub
-      - '${subnetA},${subnetB},${subnetC}'
+      - '${subnetA}, ${subnetB}, ${subnetC}'
       - { subnetA: !If [ IntraA, !Ref IntraSubnetA, "" ], subnetB: !If [ IntraB, !Ref IntraSubnetB, "" ], subnetC: !If [ IntraC, !Ref IntraSubnetC, "" ] }
     Export:
       Name: !Sub '${AWS::StackName}-IntraSubnets'

@@ -1,4 +1,3 @@
-# Public NAT gateway and EIP
   NatGw{{x.az|upper}}:
     Type: AWS::EC2::NatGateway
     Condition: Nat{{x.az|upper}}
@@ -15,8 +14,6 @@
     Condition: CreateEip{{x.az|upper}}
     Properties:
       Domain: vpc
-
-# Internal NAT gateway
 
   NatGwIntra{{x.az|upper}}:
     Type: AWS::EC2::NatGateway
