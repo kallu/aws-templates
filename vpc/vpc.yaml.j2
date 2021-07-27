@@ -63,7 +63,7 @@ Parameters:
   VpcIntraCidr:
     Type: String
     Description: VPC secondary CIDR for intranet connectivity
-    Default: ""
+    Default: {{VPC.secondary_cidr}}
     AllowedPattern: "{{Pattern.VPC_SECONDARY_CIDR}}"
 
 {% for x in AZ %}
@@ -80,7 +80,7 @@ Parameters:
   IntraCidr{{x.az|upper}}:
     Type: String
     Description: Intranet Subnet {{x.az|upper}}
-    Default: ""
+    Default: {{x.intracidr}}
     AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
   Eip{{x.az|upper}}:
     Type: String
