@@ -18,9 +18,9 @@
         },
         {
             "az": "c",
-            "pubcidr": "10.0.2.0/24",
-            "privcidr":  "10.0.6.0/24",
-            "intracidr": "100.64.0.128/26"
+            "pubcidr": "",
+            "privcidr":  "",
+            "intracidr": ""
         }
     ],
     "Pattern": {
@@ -33,11 +33,6 @@
         { "name": "EC2", "addr": "ec2" },
         { "name": "SSMMSG", "addr": "ssmmessages" },
         { "name": "EC2MSG", "addr": "ec2messages" },
-        { "name": "ECS", "addr": "ecs" },
-        { "name": "ECSAGENT", "addr": "ecs-agent" },
-        { "name": "ECSTELEM", "addr": "ecs-telemetry" },
-        { "name": "ECRAPI", "addr": "ecr.api" },
-        { "name": "ECRDKR", "addr": "ecr.dkr" },
         { "name": "CFN", "addr": "cloudformation" }
     ]
 }
