@@ -94,6 +94,11 @@ Parameters:
     Default: ""
 {% endfor %}
 
+  TransitGwId:
+    Type: String
+    Description: Transit Gateway ID
+    Default: ""
+
   InterfaceEndpoints:
     Type: String
     Description: Enable interface endpoints for AWS services
@@ -116,6 +121,7 @@ Conditions:
   IntraAny: !Or [ {{ ForAllAZs(AZ, 'Condition: IntraX') }} ]
   HasIntraCidr: !Not [!Equals [!Ref VpcIntraCidr, "" ]]
   EnableInterfaceEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
+  AttachTransitGateway: !And [ Condition: IntraAny, !Not [!Equals [!Ref TransitGwId, "" ]]]
 
 Resources:
 
@@ -142,6 +148,7 @@ Resources:
 {% endfor %}
 {% include 's3endpoint.yaml.j2' %}
 {% include 'ifendpoints.yaml.j2' %}
+{% include 'tgwattachment.yaml.j2' %}
 {% include 'paramstore.yaml.j2' %}
 
 Outputs:

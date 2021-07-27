@@ -119,6 +119,11 @@ Parameters:
     Default: ""
 
 
+  TransitGwId:
+    Type: String
+    Description: Transit Gateway ID
+    Default: ""
+
   InterfaceEndpoints:
     Type: String
     Description: Enable interface endpoints for AWS services
@@ -155,6 +160,7 @@ Conditions:
   IntraAny: !Or [ Condition: IntraA, Condition: IntraB, Condition: IntraC ]
   HasIntraCidr: !Not [!Equals [!Ref VpcIntraCidr, "" ]]
   EnableInterfaceEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
+  AttachTransitGateway: !And [ Condition: IntraAny, !Not [!Equals [!Ref TransitGwId, "" ]]]
 
 Resources:
 
@@ -566,7 +572,6 @@ Resources:
         - PubAny
         - !Ref PubRouteTable
         - !Ref AWS::NoValue
-
       - !If
         - PrivA
         - !Ref PrivRouteTableA
@@ -575,7 +580,6 @@ Resources:
         - IntraA
         - !Ref IntraRouteTableA
         - !Ref AWS::NoValue
-
       - !If
         - PrivB
         - !Ref PrivRouteTableB
@@ -584,7 +588,6 @@ Resources:
         - IntraB
         - !Ref IntraRouteTableB
         - !Ref AWS::NoValue
-
       - !If
         - PrivC
         - !Ref PrivRouteTableC
@@ -626,22 +629,18 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
 
   EC2vpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -654,22 +653,18 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
 
   SSMMSGvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -682,22 +677,18 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
 
   EC2MSGvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -710,22 +701,18 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
 
   ECSvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -738,22 +725,18 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
 
   ECSAGENTvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -766,22 +749,18 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
 
   ECSTELEMvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -794,22 +773,18 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
 
   ECRAPIvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -822,22 +797,18 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
 
   ECRDKRvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -850,22 +821,18 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
 
   CFNvpcEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -878,22 +845,38 @@ Resources:
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      
       - !If
         - PrivA
         - !Ref PrivSubnetA
         - !Ref AWS::NoValue
-      
       - !If
         - PrivB
         - !Ref PrivSubnetB
         - !Ref AWS::NoValue
-      
       - !If
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-      
+
+  TGWAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Condition: AttachTransitGateway
+    Properties: 
+      SubnetIds:
+      - !If
+        - IntraA
+        - !Ref IntraSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - IntraB
+        - !Ref IntraSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - IntraC
+        - !Ref IntraSubnetC
+        - !Ref AWS::NoValue
+      TransitGatewayId: !Ref TransitGwId
+      VpcId: !Ref VPC
 
   ParamStoreVpcId:
     Type: "AWS::SSM::Parameter"

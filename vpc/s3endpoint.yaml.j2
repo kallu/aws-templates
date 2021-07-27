@@ -9,7 +9,7 @@
         - PubAny
         - !Ref PubRouteTable
         - !Ref AWS::NoValue
-{% for x in AZ %}
+{%- for x in AZ %}
       - !If
         - Priv{{x.az|upper}}
         - !Ref PrivRouteTable{{x.az|upper}}
@@ -18,4 +18,4 @@
         - Intra{{x.az|upper}}
         - !Ref IntraRouteTable{{x.az|upper}}
         - !Ref AWS::NoValue
-{% endfor %}
+{%- endfor %}

@@ -30,10 +30,10 @@
       SecurityGroupIds:
         - !Ref VpcEndpointSecGroup
       SubnetIds:
-      {% for y in AZ %}
+      {%- for y in AZ %}
       - !If
         - Priv{{y.az.upper()}}
         - !Ref PrivSubnet{{y.az.upper()}}
         - !Ref AWS::NoValue
-      {% endfor %}
+      {%- endfor %}
 {% endfor %}
