@@ -122,7 +122,7 @@ Parameters:
   TransitGwId:
     Type: String
     Description: Transit Gateway ID
-    Default: ""
+    Default: ''
 
   InterfaceEndpoints:
     Type: String
@@ -138,21 +138,21 @@ Conditions:
   PrivA: !Not [!Equals [!Ref PrivCidrA, "" ]]
   IntraA: !Not [!Equals [!Ref IntraCidrA, "" ]]
   NatA: !And [ Condition: PubA, Condition: PrivA ]
-  NatIntraA: !And [ Condition: IntraA, Condition: PrivA ]
+  NatIntraA: !And [ Condition: IntraA, Condition: PrivA, Condition: AttachTransitGateway ]
   CreateEipA: !And [ Condition: NatA, !Equals [!Ref EipA, "" ] ]
 
   PubB: !Not [!Equals [!Ref PubCidrB, "" ]]  
   PrivB: !Not [!Equals [!Ref PrivCidrB, "" ]]
   IntraB: !Not [!Equals [!Ref IntraCidrB, "" ]]
   NatB: !And [ Condition: PubB, Condition: PrivB ]
-  NatIntraB: !And [ Condition: IntraB, Condition: PrivB ]
+  NatIntraB: !And [ Condition: IntraB, Condition: PrivB, Condition: AttachTransitGateway ]
   CreateEipB: !And [ Condition: NatB, !Equals [!Ref EipB, "" ] ]
 
   PubC: !Not [!Equals [!Ref PubCidrC, "" ]]  
   PrivC: !Not [!Equals [!Ref PrivCidrC, "" ]]
   IntraC: !Not [!Equals [!Ref IntraCidrC, "" ]]
   NatC: !And [ Condition: PubC, Condition: PrivC ]
-  NatIntraC: !And [ Condition: IntraC, Condition: PrivC ]
+  NatIntraC: !And [ Condition: IntraC, Condition: PrivC, Condition: AttachTransitGateway ]
   CreateEipC: !And [ Condition: NatC, !Equals [!Ref EipC, "" ] ]
 
   PubAny: !Or [ Condition: PubA, Condition: PubB, Condition: PubC ]
@@ -214,6 +214,47 @@ Resources:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref InetGW
+
+  TGWAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Condition: AttachTransitGateway
+    Properties: 
+      SubnetIds:
+      - !If
+        - IntraA
+        - !Ref IntraSubnetA
+        - !Ref AWS::NoValue
+      - !If
+        - IntraB
+        - !Ref IntraSubnetB
+        - !Ref AWS::NoValue
+      - !If
+        - IntraC
+        - !Ref IntraSubnetC
+        - !Ref AWS::NoValue
+      TransitGatewayId: !Ref TransitGwId
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  IntraRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: IntraAny
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} intranet route-table'
+
+  IntraDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: AttachTransitGateway
+    DependsOn: TGWAttachment
+    Properties:
+      RouteTableId: !Ref IntraRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      TransitGatewayId: !Ref TransitGwId
 
 
   PubSubnetA:
@@ -280,7 +321,6 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} InternalNAT-A'
 
-
   PrivRouteTableA:
     Type: AWS::EC2::RouteTable
     Condition: PrivA
@@ -305,24 +345,13 @@ Resources:
       RouteTableId: !Ref PrivRouteTableA
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGwA
-
-  IntraRouteTableA:
-    Type: AWS::EC2::RouteTable
+      
+  IntraSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: IntraA
-    Properties: 
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} internal route-table-A'
-
-  IntraDefaultRouteA:
-    Type: AWS::EC2::Route
-    Condition: NatIntraA
-    DependsOn: NatGwIntraA
     Properties:
-      RouteTableId: !Ref IntraRouteTableA
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwIntraA
+      RouteTableId: !Ref IntraRouteTable
+      SubnetId: !Ref IntraSubnetA
 
   PubSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -396,7 +425,6 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} InternalNAT-B'
 
-
   PrivRouteTableB:
     Type: AWS::EC2::RouteTable
     Condition: PrivB
@@ -421,24 +449,13 @@ Resources:
       RouteTableId: !Ref PrivRouteTableB
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGwB
-
-  IntraRouteTableB:
-    Type: AWS::EC2::RouteTable
+      
+  IntraSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: IntraB
-    Properties: 
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} internal route-table-B'
-
-  IntraDefaultRouteB:
-    Type: AWS::EC2::Route
-    Condition: NatIntraB
-    DependsOn: NatGwIntraB
     Properties:
-      RouteTableId: !Ref IntraRouteTableB
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwIntraB
+      RouteTableId: !Ref IntraRouteTable
+      SubnetId: !Ref IntraSubnetB
 
   PubSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -512,7 +529,6 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} InternalNAT-C'
 
-
   PrivRouteTableC:
     Type: AWS::EC2::RouteTable
     Condition: PrivC
@@ -537,24 +553,13 @@ Resources:
       RouteTableId: !Ref PrivRouteTableC
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGwC
-
-  IntraRouteTableC:
-    Type: AWS::EC2::RouteTable
+      
+  IntraSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: IntraC
-    Properties: 
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} internal route-table-C'
-
-  IntraDefaultRouteC:
-    Type: AWS::EC2::Route
-    Condition: NatIntraC
-    DependsOn: NatGwIntraC
     Properties:
-      RouteTableId: !Ref IntraRouteTableC
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwIntraC
+      RouteTableId: !Ref IntraRouteTable
+      SubnetId: !Ref IntraSubnetC
 
   PubSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -576,28 +581,20 @@ Resources:
         - !Ref PubRouteTable
         - !Ref AWS::NoValue
       - !If
-        - PrivA
-        - !Ref PrivRouteTableA
+        - IntraAny
+        - !Ref IntraRouteTable
         - !Ref AWS::NoValue
       - !If
-        - IntraA
-        - !Ref IntraRouteTableA
+        - PrivA
+        - !Ref PrivRouteTableA
         - !Ref AWS::NoValue
       - !If
         - PrivB
         - !Ref PrivRouteTableB
         - !Ref AWS::NoValue
       - !If
-        - IntraB
-        - !Ref IntraRouteTableB
-        - !Ref AWS::NoValue
-      - !If
         - PrivC
         - !Ref PrivRouteTableC
-        - !Ref AWS::NoValue
-      - !If
-        - IntraC
-        - !Ref IntraRouteTableC
         - !Ref AWS::NoValue
 
   VpcEndpointSecGroup:
@@ -740,29 +737,6 @@ Resources:
         - PrivC
         - !Ref PrivSubnetC
         - !Ref AWS::NoValue
-
-  TGWAttachment:
-    Type: AWS::EC2::TransitGatewayAttachment
-    Condition: AttachTransitGateway
-    Properties: 
-      SubnetIds:
-      - !If
-        - IntraA
-        - !Ref IntraSubnetA
-        - !Ref AWS::NoValue
-      - !If
-        - IntraB
-        - !Ref IntraSubnetB
-        - !Ref AWS::NoValue
-      - !If
-        - IntraC
-        - !Ref IntraSubnetC
-        - !Ref AWS::NoValue
-      TransitGatewayId: !Ref TransitGwId
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: !Ref AWS::StackName
 
   ParamStoreVpcId:
     Type: "AWS::SSM::Parameter"

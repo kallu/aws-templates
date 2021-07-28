@@ -13,8 +13,8 @@ a new before deleting the old) it will fail -> TGW attachment can not be changed
 
 TODO
 
-- Attach intranet subnets to correct route table
-- Add route for intranet subnets to tgw (when attached)
-- Verify private subnets have route to internal NAT (when available)
-- Internal NAT should be present only when TGW is attached,
+X Attach intranet subnets to correct route table
+X Internal NAT should be present only when TGW is attached,
   creating NATs when there is no connectivity doesnt make sense.
+X Add route for intranet subnets to tgw (when attached)
+- Option to point private subnets default route to internal NATs (when available)

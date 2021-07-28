@@ -1,4 +1,3 @@
-{# TODO: Add internal subnet routing #}
   PrivRouteTable{{x.az|upper}}:
     Type: AWS::EC2::RouteTable
     Condition: Priv{{x.az|upper}}
@@ -23,24 +22,13 @@
       RouteTableId: !Ref PrivRouteTable{{x.az|upper}}
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGw{{x.az|upper}}
-
-  IntraRouteTable{{x.az|upper}}:
-    Type: AWS::EC2::RouteTable
+      
+  IntraSubnetRouting{{x.az|upper}}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: Intra{{x.az|upper}}
-    Properties: 
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} internal route-table-{{x.az|upper}}'
-
-  IntraDefaultRoute{{x.az|upper}}:
-    Type: AWS::EC2::Route
-    Condition: NatIntra{{x.az|upper}}
-    DependsOn: NatGwIntra{{x.az|upper}}
     Properties:
-      RouteTableId: !Ref IntraRouteTable{{x.az|upper}}
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwIntra{{x.az|upper}}
+      RouteTableId: !Ref IntraRouteTable
+      SubnetId: !Ref IntraSubnet{{x.az|upper}}
 
   PubSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation

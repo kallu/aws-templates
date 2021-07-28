@@ -113,7 +113,7 @@ Conditions:
   Priv{{x.az|upper}}: !Not [!Equals [!Ref PrivCidr{{x.az|upper}}, "" ]]
   Intra{{x.az|upper}}: !Not [!Equals [!Ref IntraCidr{{x.az|upper}}, "" ]]
   Nat{{x.az|upper}}: !And [ Condition: Pub{{x.az|upper}}, Condition: Priv{{x.az|upper}} ]
-  NatIntra{{x.az|upper}}: !And [ Condition: Intra{{x.az|upper}}, Condition: Priv{{x.az|upper}} ]
+  NatIntra{{x.az|upper}}: !And [ Condition: Intra{{x.az|upper}}, Condition: Priv{{x.az|upper}}, Condition: AttachTransitGateway ]
   CreateEip{{x.az|upper}}: !And [ Condition: Nat{{x.az|upper}}, !Equals [!Ref Eip{{x.az|upper}}, "" ] ]
 {% endfor %}
   PubAny: !Or [ {{ ForAllAZs(AZ, 'Condition: PubX') }} ]
@@ -144,6 +144,7 @@ Resources:
       CidrBlock: !Ref VpcIntraCidr
 
 {% include 'internetaccess.yaml.j2' %}
+{% include 'intranetaccess.yaml.j2' %}
 {% for x in AZ %}
 {% include 'subnets.yaml.j2' %}
 {% include 'nat.yaml.j2' %}
@@ -151,7 +152,6 @@ Resources:
 {% endfor %}
 {% include 's3endpoint.yaml.j2' %}
 {% include 'ifendpoints.yaml.j2' %}
-{% include 'tgwattachment.yaml.j2' %}
 {% include 'paramstore.yaml.j2' %}
 
 Outputs:
