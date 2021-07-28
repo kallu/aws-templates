@@ -597,6 +597,34 @@ Resources:
         - !Ref PrivRouteTableC
         - !Ref AWS::NoValue
 
+  DynamoDBvpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
+      VpcEndpointType: Gateway
+      VpcId: !Ref VPC
+      RouteTableIds:
+      - !If
+        - PubAny
+        - !Ref PubRouteTable
+        - !Ref AWS::NoValue
+      - !If
+        - IntraAny
+        - !Ref IntraRouteTable
+        - !Ref AWS::NoValue
+      - !If
+        - PrivA
+        - !Ref PrivRouteTableA
+        - !Ref AWS::NoValue
+      - !If
+        - PrivB
+        - !Ref PrivRouteTableB
+        - !Ref AWS::NoValue
+      - !If
+        - PrivC
+        - !Ref PrivRouteTableC
+        - !Ref AWS::NoValue
+
   VpcEndpointSecGroup:
     Type: AWS::EC2::SecurityGroup
     Condition: EnableInterfaceEndpoints
