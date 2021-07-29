@@ -17,4 +17,7 @@ X Attach intranet subnets to correct route table
 X Internal NAT should be present only when TGW is attached,
   creating NATs when there is no connectivity doesnt make sense.
 X Add route for intranet subnets to tgw (when attached)
+X DEMO: ALB with static response
+- DEMO: EC2 instance with SSM session manager access
+- Parameter to decide what is routed to internal NATs
 - Option to point private subnets default route to internal NATs (when available)
