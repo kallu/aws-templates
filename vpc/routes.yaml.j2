@@ -16,13 +16,23 @@
 
   PrivDefaultRoute{{x.az|upper}}:
     Type: AWS::EC2::Route
-    Condition: Nat{{x.az|upper}}
-    DependsOn: NatGw{{x.az|upper}}
+    Condition: HasDefaultRoute{{x.az|upper}}
     Properties:
       RouteTableId: !Ref PrivRouteTable{{x.az|upper}}
       DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGw{{x.az|upper}}
-      
+      NatGatewayId: !If
+        - InternetViaPublicNAT
+        - !Ref NatGw{{x.az|upper}}
+        - !Ref NatGwIntra{{x.az|upper}}
+
+  PrivIntranetRoute{{x.az|upper}}:
+    Type: AWS::EC2::Route
+    Condition: HasIntranetRoute{{x.az|upper}}
+    Properties:
+      RouteTableId: !Ref PrivRouteTable{{x.az|upper}}
+      DestinationCidrBlock: !Ref IntraCIDR
+      NatGatewayId: !Ref NatGwIntra{{x.az|upper}}
+
   IntraSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: Intra{{x.az|upper}}

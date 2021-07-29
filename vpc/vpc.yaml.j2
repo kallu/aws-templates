@@ -57,6 +57,11 @@ Metadata:
           default: VPC Endpoints
         Parameters:
           - InterfaceEndpoints
+      -
+        Label:
+          default: Default route from private subnets
+        Parameters:
+          - DefaultRouting
 
 Parameters:
 
@@ -107,21 +112,40 @@ Parameters:
       - false
       - true
 
+  DefaultRouting:
+    Type: String
+    Description: Default route from private subnets
+    Default: Public NAT
+    AllowedValues:
+      - Public NAT
+      - Internal NAT
+
+  IntraCIDR:
+    Type: String
+    Description: Internal CIDR that should always to routed to internal NAT
+    Default: '{{VPC.intranets_cidr}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+
 Conditions:
 {% for x in AZ %}
   Pub{{x.az|upper}}: !Not [!Equals [!Ref PubCidr{{x.az|upper}}, "" ]]  
   Priv{{x.az|upper}}: !Not [!Equals [!Ref PrivCidr{{x.az|upper}}, "" ]]
+  HasDefaultRoute{{x.az|upper}}: !Or [ Condition: Nat{{x.az|upper}}, Condition: NatIntra{{x.az|upper}} ]
+  HasIntranetRoute{{x.az|upper}}: !And [ Condition: HasIntranetsRouting, Condition: NatIntra{{x.az|upper}} ]
   Intra{{x.az|upper}}: !Not [!Equals [!Ref IntraCidr{{x.az|upper}}, "" ]]
-  Nat{{x.az|upper}}: !And [ Condition: Pub{{x.az|upper}}, Condition: Priv{{x.az|upper}} ]
-  NatIntra{{x.az|upper}}: !And [ Condition: Intra{{x.az|upper}}, Condition: Priv{{x.az|upper}}, Condition: AttachTransitGateway ]
+  Nat{{x.az|upper}}: !And [ Condition: Pub{{x.az|upper}}, Condition: Priv{{x.az|upper}}, Condition: InternetViaPublicNAT ]
+  NatIntra{{x.az|upper}}: !And [ Condition: Intra{{x.az|upper}}, Condition: Priv{{x.az|upper}}, Condition: AttachTransitGateway, !Or [ Condition: InternetViaInternalNAT, Condition: HasIntranetsRouting ] ]
   CreateEip{{x.az|upper}}: !And [ Condition: Nat{{x.az|upper}}, !Equals [!Ref Eip{{x.az|upper}}, "" ] ]
 {% endfor %}
   PubAny: !Or [ {{ ForAllAZs(AZ, 'Condition: PubX') }} ]
   PrivAny: !Or [ {{ ForAllAZs(AZ, 'Condition: PrivX') }} ]
   IntraAny: !Or [ {{ ForAllAZs(AZ, 'Condition: IntraX') }} ]
   HasIntraCidr: !Not [!Equals [!Ref VpcIntraCidr, "" ]]
+  HasIntranetsRouting: !Not [!Equals [!Ref IntraCIDR, "" ]]
   EnableInterfaceEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
   AttachTransitGateway: !And [ Condition: IntraAny, !Not [!Equals [!Ref TransitGwId, "" ]]]
+  InternetViaPublicNAT: !And [ !Equals [!Ref DefaultRouting, "Public NAT" ], Condition: PubAny ]
+  InternetViaInternalNAT: !And [ !Equals [!Ref DefaultRouting, "Internal NAT" ], Condition: IntraAny, Condition: AttachTransitGateway ]
 
 Resources:
 

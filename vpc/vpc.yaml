@@ -42,6 +42,11 @@ Metadata:
           default: VPC Endpoints
         Parameters:
           - InterfaceEndpoints
+      -
+        Label:
+          default: Default route from private subnets
+        Parameters:
+          - DefaultRouting
 
 Parameters:
 
@@ -132,35 +137,58 @@ Parameters:
       - false
       - true
 
+  DefaultRouting:
+    Type: String
+    Description: Default route from private subnets
+    Default: Public NAT
+    AllowedValues:
+      - Public NAT
+      - Internal NAT
+
+  IntraCIDR:
+    Type: String
+    Description: Internal CIDR that should always to routed to internal NAT
+    Default: '100.64.0.0/10'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+
 Conditions:
 
   PubA: !Not [!Equals [!Ref PubCidrA, "" ]]  
   PrivA: !Not [!Equals [!Ref PrivCidrA, "" ]]
+  HasDefaultRouteA: !Or [ Condition: NatA, Condition: NatIntraA ]
+  HasIntranetRouteA: !And [ Condition: HasIntranetsRouting, Condition: NatIntraA ]
   IntraA: !Not [!Equals [!Ref IntraCidrA, "" ]]
-  NatA: !And [ Condition: PubA, Condition: PrivA ]
-  NatIntraA: !And [ Condition: IntraA, Condition: PrivA, Condition: AttachTransitGateway ]
+  NatA: !And [ Condition: PubA, Condition: PrivA, Condition: InternetViaPublicNAT ]
+  NatIntraA: !And [ Condition: IntraA, Condition: PrivA, Condition: AttachTransitGateway, !Or [ Condition: InternetViaInternalNAT, Condition: HasIntranetsRouting ] ]
   CreateEipA: !And [ Condition: NatA, !Equals [!Ref EipA, "" ] ]
 
   PubB: !Not [!Equals [!Ref PubCidrB, "" ]]  
   PrivB: !Not [!Equals [!Ref PrivCidrB, "" ]]
+  HasDefaultRouteB: !Or [ Condition: NatB, Condition: NatIntraB ]
+  HasIntranetRouteB: !And [ Condition: HasIntranetsRouting, Condition: NatIntraB ]
   IntraB: !Not [!Equals [!Ref IntraCidrB, "" ]]
-  NatB: !And [ Condition: PubB, Condition: PrivB ]
-  NatIntraB: !And [ Condition: IntraB, Condition: PrivB, Condition: AttachTransitGateway ]
+  NatB: !And [ Condition: PubB, Condition: PrivB, Condition: InternetViaPublicNAT ]
+  NatIntraB: !And [ Condition: IntraB, Condition: PrivB, Condition: AttachTransitGateway, !Or [ Condition: InternetViaInternalNAT, Condition: HasIntranetsRouting ] ]
   CreateEipB: !And [ Condition: NatB, !Equals [!Ref EipB, "" ] ]
 
   PubC: !Not [!Equals [!Ref PubCidrC, "" ]]  
   PrivC: !Not [!Equals [!Ref PrivCidrC, "" ]]
+  HasDefaultRouteC: !Or [ Condition: NatC, Condition: NatIntraC ]
+  HasIntranetRouteC: !And [ Condition: HasIntranetsRouting, Condition: NatIntraC ]
   IntraC: !Not [!Equals [!Ref IntraCidrC, "" ]]
-  NatC: !And [ Condition: PubC, Condition: PrivC ]
-  NatIntraC: !And [ Condition: IntraC, Condition: PrivC, Condition: AttachTransitGateway ]
+  NatC: !And [ Condition: PubC, Condition: PrivC, Condition: InternetViaPublicNAT ]
+  NatIntraC: !And [ Condition: IntraC, Condition: PrivC, Condition: AttachTransitGateway, !Or [ Condition: InternetViaInternalNAT, Condition: HasIntranetsRouting ] ]
   CreateEipC: !And [ Condition: NatC, !Equals [!Ref EipC, "" ] ]
 
   PubAny: !Or [ Condition: PubA, Condition: PubB, Condition: PubC ]
   PrivAny: !Or [ Condition: PrivA, Condition: PrivB, Condition: PrivC ]
   IntraAny: !Or [ Condition: IntraA, Condition: IntraB, Condition: IntraC ]
   HasIntraCidr: !Not [!Equals [!Ref VpcIntraCidr, "" ]]
+  HasIntranetsRouting: !Not [!Equals [!Ref IntraCIDR, "" ]]
   EnableInterfaceEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
   AttachTransitGateway: !And [ Condition: IntraAny, !Not [!Equals [!Ref TransitGwId, "" ]]]
+  InternetViaPublicNAT: !And [ !Equals [!Ref DefaultRouting, "Public NAT" ], Condition: PubAny ]
+  InternetViaInternalNAT: !And [ !Equals [!Ref DefaultRouting, "Internal NAT" ], Condition: IntraAny, Condition: AttachTransitGateway ]
 
 Resources:
 
@@ -339,13 +367,23 @@ Resources:
 
   PrivDefaultRouteA:
     Type: AWS::EC2::Route
-    Condition: NatA
-    DependsOn: NatGwA
+    Condition: HasDefaultRouteA
     Properties:
       RouteTableId: !Ref PrivRouteTableA
       DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwA
-      
+      NatGatewayId: !If
+        - InternetViaPublicNAT
+        - !Ref NatGwA
+        - !Ref NatGwIntraA
+
+  PrivIntranetRouteA:
+    Type: AWS::EC2::Route
+    Condition: HasIntranetRouteA
+    Properties:
+      RouteTableId: !Ref PrivRouteTableA
+      DestinationCidrBlock: !Ref IntraCIDR
+      NatGatewayId: !Ref NatGwIntraA
+
   IntraSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: IntraA
@@ -443,13 +481,23 @@ Resources:
 
   PrivDefaultRouteB:
     Type: AWS::EC2::Route
-    Condition: NatB
-    DependsOn: NatGwB
+    Condition: HasDefaultRouteB
     Properties:
       RouteTableId: !Ref PrivRouteTableB
       DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwB
-      
+      NatGatewayId: !If
+        - InternetViaPublicNAT
+        - !Ref NatGwB
+        - !Ref NatGwIntraB
+
+  PrivIntranetRouteB:
+    Type: AWS::EC2::Route
+    Condition: HasIntranetRouteB
+    Properties:
+      RouteTableId: !Ref PrivRouteTableB
+      DestinationCidrBlock: !Ref IntraCIDR
+      NatGatewayId: !Ref NatGwIntraB
+
   IntraSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: IntraB
@@ -547,13 +595,23 @@ Resources:
 
   PrivDefaultRouteC:
     Type: AWS::EC2::Route
-    Condition: NatC
-    DependsOn: NatGwC
+    Condition: HasDefaultRouteC
     Properties:
       RouteTableId: !Ref PrivRouteTableC
       DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwC
-      
+      NatGatewayId: !If
+        - InternetViaPublicNAT
+        - !Ref NatGwC
+        - !Ref NatGwIntraC
+
+  PrivIntranetRouteC:
+    Type: AWS::EC2::Route
+    Condition: HasIntranetRouteC
+    Properties:
+      RouteTableId: !Ref PrivRouteTableC
+      DestinationCidrBlock: !Ref IntraCIDR
+      NatGatewayId: !Ref NatGwIntraC
+
   IntraSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Condition: IntraC

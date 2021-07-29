@@ -1,7 +1,8 @@
 {
     "VPC": {
       "cidr": "10.0.0.0/21",
-      "secondary_cidr": "100.64.0.0/24"
+      "secondary_cidr": "100.64.0.0/24",
+      "intranets_cidr": "100.64.0.0/10"
     },
     "AZ": [
         {
