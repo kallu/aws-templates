@@ -20,4 +20,5 @@ X Add route for intranet subnets to tgw (when attached)
 X DEMO: ALB with static response
 X Parameter to decide what is routed to internal NATs
 X Option to point private subnets default route to internal NATs (when available)
+- NACLs for public and internal subnets to prevent connections between pub and intra
 - DEMO: EC2 instance with SSM session manager access
