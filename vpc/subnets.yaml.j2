@@ -10,6 +10,13 @@
         - Key: Name
           Value: !Sub '${AWS::StackName} public subnet-{{x.az|upper}}'
 
+  PubSubnet{{x.az|upper}}NACLattachment:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Condition: Pub{{x.az|upper}}
+    Properties:
+      NetworkAclId: !Ref VpcPubNACL
+      SubnetId: !Ref PubSubnet{{x.az|upper}}
+
   PrivSubnet{{x.az|upper}}:
     Type: AWS::EC2::Subnet
     Condition: Priv{{x.az|upper}}
