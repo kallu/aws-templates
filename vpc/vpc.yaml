@@ -30,6 +30,8 @@ Metadata:
           - PrivCidrA
           - PrivCidrB
           - PrivCidrC
+          - DefaultRouting
+          - InterfaceEndpoints
       -
         Label:
           default: Internal subnets
@@ -37,16 +39,8 @@ Metadata:
           - IntraCidrA
           - IntraCidrB
           - IntraCidrC
-      -
-        Label:
-          default: VPC Endpoints
-        Parameters:
-          - InterfaceEndpoints
-      -
-        Label:
-          default: Default route from private subnets
-        Parameters:
-          - DefaultRouting
+          - IntraCIDR
+          - TransitGwId
 
 Parameters:
 

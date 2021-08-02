@@ -45,6 +45,8 @@ Metadata:
 {%- for x in AZ %}
           - PrivCidr{{x.az|upper}}
 {%- endfor %}
+          - DefaultRouting
+          - InterfaceEndpoints
       -
         Label:
           default: Internal subnets
@@ -52,16 +54,8 @@ Metadata:
 {%- for x in AZ %}
           - IntraCidr{{x.az|upper}}
 {%- endfor %}
-      -
-        Label:
-          default: VPC Endpoints
-        Parameters:
-          - InterfaceEndpoints
-      -
-        Label:
-          default: Default route from private subnets
-        Parameters:
-          - DefaultRouting
+          - IntraCIDR
+          - TransitGwId
 
 Parameters:
 
