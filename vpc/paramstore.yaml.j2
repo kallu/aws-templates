@@ -6,14 +6,6 @@
       Type: 'String'
       Value: !Ref VPC
 
-#  ParamStoreVpcZoneId:
-#    Type: "AWS::SSM::Parameter"
-#    Properties:
-#      Name: !Sub '/cloudformation/${AWS::StackName}/r53zoneid'
-#      Description: !Sub '${AWS::StackName} Internal R53 Zone ID'
-#      Type: 'String'
-#      Value: !If [ HasIntZone, !Ref InternalDnsZone, "" ]
-
   ParamStorePubSubnets:
     Type: "AWS::SSM::Parameter"
     Properties:
