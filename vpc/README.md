@@ -21,7 +21,7 @@ In configuration file you can set default values for template parameters,
 define what AZs template should cover and list interface endpoints you
 want to provision.
 
-`cird` is the primary VPC CIDR that covers public and private subnets. `secondary_cidr`
+`cidr` is the primary VPC CIDR that covers public and private subnets. `secondary_cidr`
 is for intranet subnets. `intranets_cidr` should cover all intranet you can connect via
 transit gateway, and also your local intranet subnets.
 
@@ -35,10 +35,10 @@ transit gateway, and also your local intranet subnets.
 ```
 
 `AZ` -array defines what availability zones your template can cover and default values
-for respective subnets. Subnet CIDRs must to covered by VPC CIDRs defined above. An empty
-subnet CIDR means it won't be created. This allows you to render template that supports
-all AZs but only you the ones you need. E.g for development environments you could deploy
-only 2 AZ, but use 3 AZ in testing and production.
+for respective subnets. Subnet CIDRs must be covered by VPC CIDRs defined above. An empty
+subnet CIDR means subnet won't be deployed. This allows you to render template that supports
+all AZs but deploy only the ones you need. E.g for development environment you could deploy
+only 2 AZs, but use 3 AZs in testing and production.
 
 ```
     "AZ": [
@@ -63,7 +63,7 @@ only 2 AZ, but use 3 AZ in testing and production.
     ],
 ```
 
-`Pattern`s shouldn't be edited. These are to validate that input values for CIDRs are formated
+`Pattern` shouldn't be edited. These are to validate input values for CIDRs are formated
 correctly and match VPC and subnet minimum and maximum sizes.
 
 ```
@@ -75,8 +75,8 @@ correctly and match VPC and subnet minimum and maximum sizes.
 ```
 
 `InterfaceEndpoints` is a list of AWS endpoints that will be deployed into VPC.
-`name` is just an unique name for naming resources in the template. `addr` is
-the name of endpoint prefix, e.g. `ec2` is for `com.amazonaws.REGION.ec2`.
+`name` is just an unique name for a resource in the template. `addr` is
+the name of endpoint, e.g. `ec2` is for `com.amazonaws.REGION.ec2`.
 
 
 ```
@@ -97,21 +97,21 @@ the name of endpoint prefix, e.g. `ec2` is for `com.amazonaws.REGION.ec2`.
    * VpcCidr
    * VpcIntraCidr
 
-Primary and secondary CIDRs. `VpcCidr` covers private and public subnets.
+Primary and secondary CIDRs. `VpcCidr` covers private and public subnets,
 `VpcIntraCidr` is for internal subnets.
 
-_NOTE:_ There are several restrictions for VPC CIDR ranges and sizes. https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html#VPC_Sizing
+_NOTE:_ There are several restrictions for VPC CIDR ranges and sizes. See https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html#VPC_Sizing
 
 #### Public subnets
    * PubCidrX
 
-`PubCirdX` is CIDR for public subnet you want to deploy. Leaving the parameter
+`PubCidrX` is CIDR for public subnet you want to deploy. Leaving the parameter
 empty will not deploy the subnet or NAT in given AZ. If you don't deploy public
 subnet, then there won't be a route to internet, via IGW, from private subnet
 in the same AZ. Public subnets are for resources you want to expose to internet.
 Typically these are NATs and internet facing load-balancers. 
 
-_NOTE:_ Default route from public subnet is always to IGW and access to internal
+_NOTE:_ Default route from public subnet is always to local IGW and access to internal
 subnets or TGW is blocked by network access control list (NACL).
 
 #### Private subnets
@@ -119,7 +119,7 @@ subnets or TGW is blocked by network access control list (NACL).
    * DefaultRouting
    * InterfaceEndpoints
 
-`PrivCirdX`is CIDR for private subnet you want to deploy. Leaving the parameter
+`PrivCidrX`is CIDR for private subnet you want to deploy. Leaving the parameter
 empty will not deploy the subnet in given AZ. `DefaultRouting` can be either via
 public NAT and local IGW or private NAT and TGW. NAT instance must be in the same
 AZ and private subnet. `InterfaceEndpoints` will choose if VPC interface endpoints
@@ -159,7 +159,7 @@ can not be changed once it is set :-(
    * Cloudformation stack exports
    * SSM parameterstore parameters
 
-![VPC diagram](/vpc.png)
+![VPC diagram](vpc.png)
 
 ### Outputs:
 
