@@ -1,0 +1,206 @@
+{#
+   This is Jinja2 template that will generate Cloudformation YAML template
+   with input from config.json in this same directory.
+
+   Install Jinja CLI
+
+   % pip install jinja-cli
+
+   then render Cloudformation template
+
+   % jinja2 vpc.yaml.j2 config.json > vpc.yaml
+#}
+
+{# Comma separated list of strings with letter X replaced by AZ identifier in caps #}
+{% macro ForAllAZs(az,format) -%}
+{% for x in az -%}
+{{ format|replace('X', x.az.upper()) }}{{ ", " if not loop.last else "" }}
+{%- endfor %}
+{%- endmacro %}
+
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC network v2.0.0
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: VPC CIDR(s)
+        Parameters:
+          - VpcCidr
+          - VpcIntraCidr
+      -
+        Label:
+          default: Public subnets
+        Parameters:
+{%- for x in AZ %}
+          - PubCidr{{x.az|upper}}
+{%- endfor %}
+      -
+        Label:
+          default: Private subnets
+        Parameters:
+{%- for x in AZ %}
+          - PrivCidr{{x.az|upper}}
+{%- endfor %}
+          - DefaultRouting
+          - InterfaceEndpoints
+      -
+        Label:
+          default: Internal subnets
+        Parameters:
+{%- for x in AZ %}
+          - IntraCidr{{x.az|upper}}
+{%- endfor %}
+          - IntraCIDR
+          - TransitGwId
+
+Parameters:
+
+  VpcCidr:
+    Type: String
+    Description: VPC Primary CIDR
+    Default: '{{VPC.cidr}}'
+    AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
+
+  VpcIntraCidr:
+    Type: String
+    Description: VPC secondary CIDR for intranet connectivity
+    Default: '{{VPC.secondary_cidr}}'
+    AllowedPattern: "{{Pattern.VPC_SECONDARY_CIDR}}"
+
+{% for x in AZ %}
+  PubCidr{{x.az|upper}}:
+    Type: String
+    Description: Public Subnet {{x.az|upper}}
+    Default: '{{x.pubcidr}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+  PrivCidr{{x.az|upper}}:
+    Type: String
+    Description: Private Subnet {{x.az|upper}}
+    Default: '{{x.privcidr}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+  IntraCidr{{x.az|upper}}:
+    Type: String
+    Description: Intranet Subnet {{x.az|upper}}
+    Default: '{{x.intracidr}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+  Eip{{x.az|upper}}:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-{{x.az|upper}} (optional)
+    Default: ''
+{% endfor %}
+
+  TransitGwId:
+    Type: String
+    Description: Transit Gateway ID
+    Default: ''
+
+  InterfaceEndpoints:
+    Type: String
+    Description: Enable interface endpoints for AWS services
+    Default: false
+    AllowedValues:
+      - false
+      - true
+
+  DefaultRouting:
+    Type: String
+    Description: Default route from private subnets
+    Default: Public NAT
+    AllowedValues:
+      - Public NAT
+      - Internal NAT
+
+  IntraCIDR:
+    Type: String
+    Description: Internal CIDR that should always to routed to internal NAT
+    Default: '{{VPC.intranets_cidr}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+
+Conditions:
+{% for x in AZ %}
+  Pub{{x.az|upper}}: !Not [!Equals [!Ref PubCidr{{x.az|upper}}, "" ]]  
+  Priv{{x.az|upper}}: !Not [!Equals [!Ref PrivCidr{{x.az|upper}}, "" ]]
+  HasDefaultRoute{{x.az|upper}}: !Or [ Condition: Nat{{x.az|upper}}, Condition: NatIntra{{x.az|upper}} ]
+  HasIntranetRoute{{x.az|upper}}: !And [ Condition: HasIntranetsRouting, Condition: NatIntra{{x.az|upper}} ]
+  Intra{{x.az|upper}}: !Not [!Equals [!Ref IntraCidr{{x.az|upper}}, "" ]]
+  Nat{{x.az|upper}}: !And [ Condition: Pub{{x.az|upper}}, Condition: Priv{{x.az|upper}}, Condition: InternetViaPublicNAT ]
+  NatIntra{{x.az|upper}}: !And [ Condition: Intra{{x.az|upper}}, Condition: Priv{{x.az|upper}}, Condition: AttachTransitGateway, !Or [ Condition: InternetViaInternalNAT, Condition: HasIntranetsRouting ] ]
+  CreateEip{{x.az|upper}}: !And [ Condition: Nat{{x.az|upper}}, !Equals [!Ref Eip{{x.az|upper}}, "" ] ]
+{% endfor %}
+  PubAny: !Or [ {{ ForAllAZs(AZ, 'Condition: PubX') }} ]
+  PrivAny: !Or [ {{ ForAllAZs(AZ, 'Condition: PrivX') }} ]
+  IntraAny: !Or [ {{ ForAllAZs(AZ, 'Condition: IntraX') }} ]
+  HasIntraCidr: !Not [!Equals [!Ref VpcIntraCidr, "" ]]
+  HasIntranetsRouting: !Not [!Equals [!Ref IntraCIDR, "" ]]
+  EnableInterfaceEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
+  AttachTransitGateway: !And [ Condition: IntraAny, !Not [!Equals [!Ref TransitGwId, "" ]]]
+  InternetViaPublicNAT: !And [ !Equals [!Ref DefaultRouting, "Public NAT" ], Condition: PubAny ]
+  InternetViaInternalNAT: !And [ !Equals [!Ref DefaultRouting, "Internal NAT" ], Condition: IntraAny, Condition: AttachTransitGateway ]
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  VPCSecondaryCidr:
+    Type: AWS::EC2::VPCCidrBlock
+    Condition: HasIntraCidr
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref VpcIntraCidr
+
+{% include 'internetaccess.yaml.j2' %}
+{% include 'intranetaccess.yaml.j2' %}
+{% include 'nacl.yaml.j2' %}
+{% for x in AZ %}
+{% include 'subnets.yaml.j2' %}
+{% include 'nat.yaml.j2' %}
+{% include 'routes.yaml.j2' %}
+{% endfor %}
+{% include 'gwendpoints.yaml.j2' %}
+{% include 'ifendpoints.yaml.j2' %}
+{% include 'paramstore.yaml.j2' %}
+
+Outputs:
+
+  VpcId:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VpcId'
+
+  PubSubnets:
+    Description: Public Subnets
+    Value: !Sub
+      - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+      - { {{ ForAllAZs(AZ,'subnetX: !If [ PubX, !Ref PubSubnetX, "" ]') }} }
+    Export:
+      Name: !Sub '${AWS::StackName}-PubSubnets'
+
+  PrivSubnets:
+    Description: Private Subnets
+    Value: !Sub
+      - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+      - { {{ ForAllAZs(AZ,'subnetX: !If [ PrivX, !Ref PrivSubnetX, "" ]') }} }
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivSubnets'
+
+  IntraSubnets:
+    Description: Internal Subnets
+    Value: !Sub
+      - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+      - { {{ ForAllAZs(AZ,'subnetX: !If [ IntraX, !Ref IntraSubnetX, "" ]') }} }
+    Export:
+      Name: !Sub '${AWS::StackName}-IntraSubnets'

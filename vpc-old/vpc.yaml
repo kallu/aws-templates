@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: VPC network (1-NAT) v1.3.2
+Description: VPC network v1.3.2
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -26,6 +26,8 @@ Metadata:
           default: NAT configuration
         Parameters:
           - EipA
+          - EipB
+          - EipC
       -
         Label:
           default: DNS configuration
@@ -73,6 +75,14 @@ Parameters:
     Type: String
     Description: Pre-allocated EIP ID for AZ-A (optional)
     Default: ""
+  EipB:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-B (optional)
+    Default: ""
+  EipC:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-C (optional)
+    Default: ""
   InternalZone:
     Type: String
     Description: Name of Route53 VPC internal zone
@@ -95,9 +105,11 @@ Conditions:
   PrivC: !Not [!Equals [!Ref PrivCidrC, "" ]]
   PrivAny: !Or [ Condition: PrivA, Condition: PrivB, Condition: PrivC ]
   NatA: !And [ Condition: PubA, Condition: PrivA ]
-  NatB: !And [ Condition: NatA, Condition: PrivB ]
-  NatC: !And [ Condition: NatA, Condition: PrivC ]
+  NatB: !And [ Condition: PubB, Condition: PrivB ]
+  NatC: !And [ Condition: PubC, Condition: PrivC ]
   CreateEipA: !And [ Condition: NatA, !Equals [!Ref EipA, "" ] ]
+  CreateEipB: !And [ Condition: NatB, !Equals [!Ref EipB, "" ] ]
+  CreateEipC: !And [ Condition: NatC, !Equals [!Ref EipC, "" ] ]
   HasIntZone: !Not [!Equals [!Ref InternalZone, "" ]]
   EnableEndpoints: !Equals [!Ref InterfaceEndpoints, "true"]
 
@@ -505,6 +517,22 @@ Resources:
       RouteTableId: !Ref PubRouteTable
       SubnetId: !Ref PubSubnetB
 
+  NatGwB:
+    Type: AWS::EC2::NatGateway
+    Condition: NatB
+    Properties:
+      SubnetId: !Ref PubSubnetB
+      AllocationId: !If [ CreateEipB, !GetAtt NatEipB.AllocationId, !Ref EipB ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-B'
+
+  NatEipB:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipB
+    Properties:
+      Domain: vpc
+
   PubSubnetC:
     Type: AWS::EC2::Subnet
     Condition: PubC
@@ -523,6 +551,22 @@ Resources:
     Properties:
       RouteTableId: !Ref PubRouteTable
       SubnetId: !Ref PubSubnetC
+
+  NatGwC:
+    Type: AWS::EC2::NatGateway
+    Condition: NatC
+    Properties:
+      SubnetId: !Ref PubSubnetC
+      AllocationId: !If [ CreateEipC, !GetAtt NatEipC.AllocationId, !Ref EipC ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-C'
+
+  NatEipC:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipC
+    Properties:
+      Domain: vpc
 
   PubRouteTable:
     Type: AWS::EC2::RouteTable
@@ -610,11 +654,11 @@ Resources:
   PrivDefaultRouteB:
     Type: AWS::EC2::Route
     Condition: NatB
-    DependsOn: NatGwA
+    DependsOn: NatGwB
     Properties:
       RouteTableId: !Ref PrivRouteTableB
       DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwA
+      NatGatewayId: !Ref NatGwB
 
   PrivSubnetC:
     Type: AWS::EC2::Subnet
@@ -647,11 +691,11 @@ Resources:
   PrivDefaultRouteC:
     Type: AWS::EC2::Route
     Condition: NatC
-    DependsOn: NatGwA
+    DependsOn: NatGwC
     Properties:
       RouteTableId: !Ref PrivRouteTableC
       DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwA
+      NatGatewayId: !Ref NatGwC
 
   ParamStoreVpcId:
     Type: "AWS::SSM::Parameter"
@@ -667,7 +711,7 @@ Resources:
       Name: !Sub '/cloudformation/${AWS::StackName}/r53zoneid'
       Description: !Sub '${AWS::StackName} Internal R53 Zone ID'
       Type: 'String'
-      Value: !Ref InternalDnsZone
+      Value: !If [ HasIntZone, !Ref InternalDnsZone, "" ]
 
   ParamStorePubSubnets:
     Type: "AWS::SSM::Parameter"

@@ -1,0 +1,32 @@
+  InetGW:
+    Type: AWS::EC2::InternetGateway
+    Condition: PubAny
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName} internet gateway'
+
+  InetGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: PubAny
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InetGW
+
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: PubAny
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public route-table'
+
+  PubDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: PubAny
+    DependsOn: InetGW
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW

@@ -1,0 +1,26 @@
+  NatGw{{x.az|upper}}:
+    Type: AWS::EC2::NatGateway
+    Condition: Nat{{x.az|upper}}
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref PubSubnet{{x.az|upper}}
+      AllocationId: !If [ CreateEip{{x.az|upper}}, !GetAtt NatEip{{x.az|upper}}.AllocationId, !Ref Eip{{x.az|upper}} ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-{{x.az|upper}}'
+
+  NatEip{{x.az|upper}}:
+    Type: AWS::EC2::EIP
+    Condition: CreateEip{{x.az|upper}}
+    Properties:
+      Domain: vpc
+
+  NatGwIntra{{x.az|upper}}:
+    Type: AWS::EC2::NatGateway
+    Condition: NatIntra{{x.az|upper}}
+    Properties:
+      ConnectivityType: private
+      SubnetId: !Ref IntraSubnet{{x.az|upper}}
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} InternalNAT-{{x.az|upper}}'

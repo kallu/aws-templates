@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ALB with static HTTP response
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: Network configuration
+        Parameters:
+          - VPC
+          - Subnets
+          - ALBType
+          - CertId
+          - AllowAccessCIDR
+
+Parameters:
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC for deployment
+
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets within above VPC (min 2)
+
+  ALBType:
+    Type: String
+    Description: Is ALB internal or internet-facing
+    Default: internal
+    AllowedValues:
+      - internal
+      - internet-facing
+
+  AllowAccessCIDR:
+    Type: String
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){1}$"
+    Description: CIDR allowed for HTTP(S) access
+    Default: 0.0.0.0/0
+
+  CertId:
+    Type: String
+    Description: ACM certificate ID, required to enable HTTPS
+
+Rules:
+  SubnetsInVPC:
+    Assertions:
+    - Assert:
+        Fn::EachMemberIn:
+        - Fn::ValueOf:
+          - Subnets
+          - VpcId
+        - 
+          - !Ref VPC
+      AssertDescription: All subnets must within the VPC
+  
+Conditions:
+  ListenHTTPS: !Not [!Equals [!Ref CertId, "" ]]
+
+Resources:
+  SecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: !Sub "${AWS::StackName} HTTP redirector ALB" 
+
+  SGroupIngress80:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      GroupId: !Ref SecGroup
+      CidrIp: !Ref AllowAccessCIDR
+      Description: !Sub "Allow HTTP from ${AllowAccessCIDR}"
+      FromPort: 80
+      IpProtocol: TCP
+      ToPort: 80
+
+  SGroupIngress443:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Condition: ListenHTTPS
+    Properties:
+      GroupId: !Ref SecGroup
+      CidrIp: !Ref AllowAccessCIDR
+      Description: !Sub "Allow HTTPS from ${AllowAccessCIDR}"
+      FromPort: 443
+      IpProtocol: TCP
+      ToPort: 443
+
+  ALB:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Type: application
+      Scheme: !Ref ALBType
+      SecurityGroups:
+        - !Ref SecGroup
+      Subnets: !Ref Subnets
+      Tags:
+      - Key: Name
+        Value: !Ref AWS::StackName
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: fixed-response
+        FixedResponseConfig:
+          ContentType: "text/plain"
+          MessageBody: !Sub "Hello from ${ALB}"
+          StatusCode: 200
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: ListenHTTPS
+    Properties:
+      DefaultActions:
+      - Type: fixed-response
+        FixedResponseConfig:
+          ContentType: "text/plain"
+          MessageBody: !Sub "Hello from ${ALB}"
+          StatusCode: 200
+      LoadBalancerArn: !Ref ALB
+      Port: 443
+      Protocol: HTTPS
+      Certificates: 
+      - CertificateArn: !Sub "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/${CertId}"
+ 
+Outputs:
+
+  HTTPUrl:
+    Description: DNS name of application load balancer
+    Value: !Sub
+      - "http://${Host}/"
+      - Host: !GetAtt ALB.DNSName
+
+  HTTPSUrl:
+    Condition: ListenHTTPS
+    Description: HTTPS URL of application load balancer
+    Value: !Sub
+      - "https://${Host}/"
+      - Host: !GetAtt ALB.DNSName

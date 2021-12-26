@@ -1,0 +1,37 @@
+  ParamStoreVpcId:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/vpcid'
+      Description: !Sub '${AWS::StackName} VPC ID' 
+      Type: 'String'
+      Value: !Ref VPC
+
+  ParamStorePubSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/pubsubnets'
+      Description: !Sub '${AWS::StackName} public subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+        - { {{ ForAllAZs(AZ,'subnetX: !If [ PubX, !Ref PubSubnetX, "" ]') }} }
+
+  ParamStorePrivSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/privsubnets'
+      Description: !Sub '${AWS::StackName} private subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+        - { {{ ForAllAZs(AZ,'subnetX: !If [ PrivX, !Ref PrivSubnetX, "" ]') }} }
+
+  ParamStoreIntraSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/intrasubnets'
+      Description: !Sub '${AWS::StackName} internal subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '{{ ForAllAZs(AZ, '${subnetX}') }}'
+        - { {{ ForAllAZs(AZ,'subnetX: !If [ IntraX, !Ref IntraSubnetX, "" ]') }} }

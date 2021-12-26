@@ -1,0 +1,39 @@
+  VpcEndpointSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      GroupDescription: !Sub "VPC Interface endpoint sec.group ${AWS::StackName}"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        -
+          CidrIp: !Ref VpcCidr
+          Description: Allow HTTPS from VPC CIDR
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+        -
+          CidrIp: !If [ IntraAny, !Ref VpcIntraCidr, !Ref AWS::NoValue ]
+          Description: Allow HTTPS from VPC secondary CIDR
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+
+{% for x in InterfaceEndpoints %}
+  {{x.name}}vpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: EnableInterfaceEndpoints
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.{{x.addr}}'
+      VpcEndpointType: Interface
+      VpcId: !Ref VPC
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !Ref VpcEndpointSecGroup
+      SubnetIds:
+      {%- for y in AZ %}
+      - !If
+        - Priv{{y.az.upper()}}
+        - !Ref PrivSubnet{{y.az.upper()}}
+        - !Ref AWS::NoValue
+      {%- endfor %}
+{% endfor %}
