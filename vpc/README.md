@@ -96,7 +96,7 @@ the name of endpoint, e.g. `ec2` is for `com.amazonaws.REGION.ec2`.
 * Public, private and internal subnet for each AZ
 * Shared routing table for public & internal subnets and dedicated tables for each private subnet
 * Public NAT gateway for each AZ when there is both public and private subnet
-* Private NAT gateway for each AZ when there is both internal and private subnet
+* Private NAT gateway for each AZ when there is private subnet with transit gateway attachment
 * Option to use pre-allocated EIPs for Public NAT gateways
 * Options for default route from private subnets via public or private NAT gateway in same AZ
 * VPC S3 and DynamoDB gateway end-points and routing for every subnet
