@@ -90,6 +90,22 @@ the name of endpoint, e.g. `ec2` is for `com.amazonaws.REGION.ec2`.
 }
 ```
 
+### Template features
+* VPC
+* Internet gataway
+* Public, private and internal subnet for each AZ
+* Shared routing table for public & internal subnets and dedicated tables for each private subnet
+* Public NAT gateway for each AZ when there is both public and private subnet
+* Private NAT gateway for each AZ when there is both internal and private subnet
+* Option to use pre-allocated EIPs for Public NAT gateways
+* Options for default route from private subnets via public or private NAT gateway in same AZ
+* VPC S3 and DynamoDB gateway end-points and routing for every subnet
+* Option for VPC interface end-points for private subnets
+* Outputs as
+   * Cloudformation stack exports
+   * SSM parameterstore parameters
+
+![VPC diagram](vpc.png)
 
 ### Template parameters
 
@@ -143,24 +159,6 @@ but because there is already attachment in given AZ (Cloudformation will first
 try to create a new before deleting the old) it will fail -> TGW attachment
 can not be changed once it is set :-(
 
-### Template features
-* VPC
-* Internet gataway
-* Public, private and internal subnet for each AZ
-* Shared routing table for public & internal subnets and dedicated tables for each private subnet
-* Public NAT gateway for each AZ when there is both public and private subnet
-* Private NAT gateway for each AZ when there is both internal and private subnet
-* Option to use pre-allocated EIPs for Public NAT gateways
-* Options for default route from private subnets via public or private NAT gateway in same AZ
-* VPC S3 and DynamoDB gateway end-points and routing for every subnet
-* Option for VPC interface end-points for private subnets
-* Option for internal R53 zone
-* Outputs as
-   * Cloudformation stack exports
-   * SSM parameterstore parameters
-
-![VPC diagram](vpc.png)
-
 ### Outputs:
 
 |Value |Export |Parameter |
@@ -169,5 +167,4 @@ can not be changed once it is set :-(
 |Public Subnets|{STACKNAME}-PubSubnets|/cloudformation/{STACKNAME}/pubsubnets|
 |Private Subnets|{STACKNAME}-PrivSubnets|/cloudformation/{STACKNAME}/privsubnets|
 |Internal Subnets|{STACKNAME}-IntraSubnets|/cloudformation/{STACKNAME}/intrasubnets|
-|Internal R53 ZoneID|{STACKNAME}-R53ZoneId|/cloudformation/{STACKNAME}/r53zoneid|
 
