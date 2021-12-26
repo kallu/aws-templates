@@ -13,7 +13,7 @@ AWS VPC network template
 * NAT gateway for each AZ when there is both public and private subnet
 * Option to use pre-allocated EIPs for NAT gateways
 * Routing from private subnets to internet via NAT gateway in same AZ.
-NOTE: vpc1nat.yaml will use a single NAT gateway in AZ-A public subnet for all private subnets.
+`vpc1nat.yaml` will use a single NAT gateway in AZ-A public subnet for all private subnets.
 * VPC S3 end-point and routing for every subnet
 * Option for VPC interface end-points for private subnets
    * com.amazonaws.region.ssm
@@ -31,7 +31,7 @@ NOTE: vpc1nat.yaml will use a single NAT gateway in AZ-A public subnet for all p
    * Cloudformation stack exports
    * SSM parameterstore parameters
 
-![VPC diagram](/vpc.png)
+![VPC diagram](vpc.png)
 
 ### Outputs:
 
