@@ -12,6 +12,10 @@ Obsolete / simple VPC network templates
 
 RDS templates
 
+## misc
+
+Misc demos
+
 ## boilerplate.yaml
 
 Boilerplate to start building things into VPC
