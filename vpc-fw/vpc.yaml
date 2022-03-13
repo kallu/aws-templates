@@ -41,35 +41,35 @@ Parameters:
   InspectionVpcCidr:
     Type: String
     Description: Inspection VPC CIDR
-    Default: '10.0.0.0/24'
+    Default: '10.0.0.0/25'
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
 
   EgressVpcCidr:
     Type: String
     Description: Egress VPC CIDR
-    Default: '10.0.1.0/24'
+    Default: '10.0.0.128/25'
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
 
 
   InspectionTGWCidrA:
     Type: String
     Description: Inspection VPC TGW Subnet A
-    Default: '10.0.0.0/27'
+    Default: '10.0.0.0/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   InspectionFWCidrA:
     Type: String
     Description: Inspection VPC FW Subnet A
-    Default: '10.0.0.128/27'
+    Default: '10.0.0.16/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   EgressTGWCidrA:
     Type: String
     Description: Egress VPC TGW Subnet A
-    Default: '10.0.1.0/27'
+    Default: '10.0.0.128/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   EgressPubCidrA:
     Type: String
     Description: Egress VPC Public Subnet A
-    Default: '10.0.1.128/27'
+    Default: '10.0.0.144/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   EipA:
     Type: String
@@ -79,22 +79,22 @@ Parameters:
   InspectionTGWCidrB:
     Type: String
     Description: Inspection VPC TGW Subnet B
-    Default: '10.0.0.32/27'
+    Default: '10.0.0.32/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   InspectionFWCidrB:
     Type: String
     Description: Inspection VPC FW Subnet B
-    Default: '10.0.0.160/27'
+    Default: '10.0.0.48/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   EgressTGWCidrB:
     Type: String
     Description: Egress VPC TGW Subnet B
-    Default: '10.0.1.32/27'
+    Default: '10.0.0.160/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   EgressPubCidrB:
     Type: String
     Description: Egress VPC Public Subnet B
-    Default: '10.0.1.160/27'
+    Default: '10.0.0.176/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   EipB:
     Type: String
@@ -104,22 +104,22 @@ Parameters:
   InspectionTGWCidrC:
     Type: String
     Description: Inspection VPC TGW Subnet C
-    Default: '10.0.0.64/27'
+    Default: '10.0.0.64/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   InspectionFWCidrC:
     Type: String
     Description: Inspection VPC FW Subnet C
-    Default: '10.0.0.192/27'
+    Default: '10.0.0.80/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   EgressTGWCidrC:
     Type: String
     Description: Egress VPC TGW Subnet C
-    Default: '10.0.1.64/27'
+    Default: '10.0.0.192/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   EgressPubCidrC:
     Type: String
     Description: Egress VPC Public Subnet C
-    Default: '10.0.1.192/27'
+    Default: '10.0.0.208/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   EipC:
     Type: String

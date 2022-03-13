@@ -1,29 +1,29 @@
 {
     "VPC": {
-      "inspection": "10.0.0.0/24",
-      "egress": "10.0.1.0/24"
+      "inspection": "10.0.0.0/25",
+      "egress": "10.0.0.128/25"
     },
     "AZ": [
         {
             "az": "a",
-            "inspection_tgw": "10.0.0.0/27",
-            "inspection_fw":  "10.0.0.128/27",
-            "egress_tgw": "10.0.1.0/27",
-            "egress_pub": "10.0.1.128/27"
+            "inspection_tgw": "10.0.0.0/28",
+            "inspection_fw":  "10.0.0.16/28",
+            "egress_tgw": "10.0.0.128/28",
+            "egress_pub": "10.0.0.144/28"
         },
         {
             "az": "b",
-            "inspection_tgw": "10.0.0.32/27",
-            "inspection_fw":  "10.0.0.160/27",
-            "egress_tgw": "10.0.1.32/27",
-            "egress_pub": "10.0.1.160/27"
+            "inspection_tgw": "10.0.0.32/28",
+            "inspection_fw":  "10.0.0.48/28",
+            "egress_tgw": "10.0.0.160/28",
+            "egress_pub": "10.0.0.176/28"
         },
         {
             "az": "c",
-            "inspection_tgw": "10.0.0.64/27",
-            "inspection_fw":  "10.0.0.192/27",
-            "egress_tgw": "10.0.1.64/27",
-            "egress_pub": "10.0.1.192/27"
+            "inspection_tgw": "10.0.0.64/28",
+            "inspection_fw":  "10.0.0.80/28",
+            "egress_tgw": "10.0.0.192/28",
+            "egress_pub": "10.0.0.208/28"
         }
     ],
     "Pattern": {
