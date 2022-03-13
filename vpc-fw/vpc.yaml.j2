@@ -126,7 +126,7 @@ Resources:
 {% for x in AZ %}
 {% include 'subnets.yaml.j2' %}
 {% include 'nat.yaml.j2' %}
-{# {% include 'routes.yaml.j2' %} #}
+{% include 'routes.yaml.j2' %}
 {% endfor %}
 
 Outputs:

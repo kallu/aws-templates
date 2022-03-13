@@ -250,7 +250,61 @@ Resources:
     Properties:
       Domain: vpc
 
+  InspectionTGWRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-A'
 
+  InspectionTGWSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTableA
+      SubnetId: !Ref InspectionTGWSubnetA
+
+  InspectionFWRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table-A'
+
+  InspectionFWSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionFWRouteTableA
+      SubnetId: !Ref InspectionFWSubnetA
+
+  EgressTGWRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-A'
+
+  EgressTGWSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableA
+      SubnetId: !Ref EgressTGWSubnetA
+
+  EgressTGWDefaultRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableA
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwA
+
+  EgressPubSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref EgressTGWSubnetA
+      
 
   InspectionTGWSubnetB:
     Type: AWS::EC2::Subnet
@@ -311,7 +365,61 @@ Resources:
     Properties:
       Domain: vpc
 
+  InspectionTGWRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-B'
 
+  InspectionTGWSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTableB
+      SubnetId: !Ref InspectionTGWSubnetB
+
+  InspectionFWRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table-B'
+
+  InspectionFWSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionFWRouteTableB
+      SubnetId: !Ref InspectionFWSubnetB
+
+  EgressTGWRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-B'
+
+  EgressTGWSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableB
+      SubnetId: !Ref EgressTGWSubnetB
+
+  EgressTGWDefaultRouteB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableB
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwB
+
+  EgressPubSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref EgressTGWSubnetB
+      
 
   InspectionTGWSubnetC:
     Type: AWS::EC2::Subnet
@@ -372,7 +480,61 @@ Resources:
     Properties:
       Domain: vpc
 
+  InspectionTGWRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-C'
 
+  InspectionTGWSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTableC
+      SubnetId: !Ref InspectionTGWSubnetC
+
+  InspectionFWRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table-C'
+
+  InspectionFWSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionFWRouteTableC
+      SubnetId: !Ref InspectionFWSubnetC
+
+  EgressTGWRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-C'
+
+  EgressTGWSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableC
+      SubnetId: !Ref EgressTGWSubnetC
+
+  EgressTGWDefaultRouteC:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableC
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwC
+
+  EgressPubSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref EgressTGWSubnetC
+      
 
 
 Outputs:
