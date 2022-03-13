@@ -1,0 +1,84 @@
+  TransitGateway:
+    Type: AWS::EC2::TransitGateway
+    Properties: 
+      AmazonSideAsn: 65000
+      AutoAcceptSharedAttachments: enable
+      DefaultRouteTableAssociation: enable
+      DefaultRouteTablePropagation: enable
+      Description: !Sub '${AWS::StackName} TGW for central network firewall and egress'
+      DnsSupport: enable
+      MulticastSupport: disable
+      Tags: 
+        - Key: Name
+          Value: !Ref 'AWS::StackId'
+      VpnEcmpSupport: enable
+
+  TGWInspectionRouteTable:
+    Type: AWS::EC2::TransitGatewayRouteTable
+    Properties:
+      TransitGatewayId: !Ref TransitGateway
+      Tags: 
+        - Key: Name
+          Value: !Sub '${AWS::StackName} inspection route table'
+
+  TGWInspectionRoute:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      Blackhole: false
+      DestinationCidrBlock: '0.0.0.0/0'
+      TransitGatewayAttachmentId: !Ref TGWInspectionAttachment
+      TransitGatewayRouteTableId: !Ref TGWInspectionRouteTable
+
+  TGWInspectionAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties:
+      TransitGatewayId: !Ref TransitGateway
+      VpcId: !Ref InspectionVPC
+      SubnetIds:
+{%- for x in AZ %}
+        - !Ref InspectionTGWSubnet{{x.az|upper}}
+{%- endfor %}
+      Tags: 
+        - Key: Name
+          Value: !Sub '${AWS::StackName} inspection VPC attachment'
+
+  TGWInspectionVPCRouteAssociation:
+    Type: AWS::EC2::TransitGatewayRouteTableAssociation
+    Properties:
+      TransitGatewayAttachmentId: !Ref TGWInspectionAttachment
+      TransitGatewayRouteTableId: !Ref TGWFirewallRouteTable
+
+  TGWFirewallRouteTable:
+    Type: AWS::EC2::TransitGatewayRouteTable
+    Properties:
+      TransitGatewayId: !Ref TransitGateway
+      Tags: 
+        - Key: Name
+          Value: !Sub '${AWS::StackName} firewall route table'
+
+  TGWFirewallRoute:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      Blackhole: false
+      DestinationCidrBlock: '0.0.0.0/0'
+      TransitGatewayAttachmentId: !Ref TGWEgressAttachment
+      TransitGatewayRouteTableId: !Ref TGWFirewallRouteTable
+
+  TGWEgressAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties:
+      TransitGatewayId: !Ref TransitGateway
+      VpcId: !Ref EgressVPC
+      SubnetIds:
+{%- for x in AZ %}
+        - !Ref EgressTGWSubnet{{x.az|upper}}
+{%- endfor %}
+      Tags: 
+        - Key: Name
+          Value: !Sub '${AWS::StackName} egress VPC attachment'
+
+  TGWEgressVPCRouteAssociation:
+    Type: AWS::EC2::TransitGatewayRouteTableAssociation
+    Properties:
+      TransitGatewayAttachmentId: !Ref TGWEgressAttachment
+      TransitGatewayRouteTableId: !Ref TGWInspectionRouteTable
