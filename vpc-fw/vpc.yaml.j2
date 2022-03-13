@@ -121,13 +121,14 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} Egress VPC' 
 
-{% include 'internetaccess.yaml.j2' %}
-
 {% for x in AZ %}
 {% include 'subnets.yaml.j2' %}
 {% include 'nat.yaml.j2' %}
 {% include 'routes.yaml.j2' %}
 {% endfor %}
+
+{% include 'internetaccess.yaml.j2' %}
+{% include 'tgw.yaml.j2' %}
 
 Outputs:
 
