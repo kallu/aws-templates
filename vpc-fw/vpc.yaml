@@ -1,0 +1,390 @@
+
+
+
+
+
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Inspection + Egress VPCs v1.0.0
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: Inspection VPC
+        Parameters:
+          - InspectionVpcCidr
+          - InspectionTGWCidrA
+          - InspectionTGWCidrB
+          - InspectionTGWCidrC
+          - InspectionFWCidrA
+          - InspectionFWCidrB
+          - InspectionFWCidrC
+      -
+        Label:
+          default: Central Egress VPC
+        Parameters:
+          - EgressVpcCidr
+          - EgressTGWCidrA
+          - EgressTGWCidrB
+          - EgressTGWCidrC
+          - EgressPubCidrA
+          - EgressPubCidrB
+          - EgressPubCidrC
+          - EipA
+          - EipB
+          - EipC
+
+Parameters:
+
+  InspectionVpcCidr:
+    Type: String
+    Description: Inspection VPC CIDR
+    Default: '10.0.0.0/24'
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+
+  EgressVpcCidr:
+    Type: String
+    Description: Egress VPC CIDR
+    Default: '10.0.1.0/24'
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+
+
+  InspectionTGWCidrA:
+    Type: String
+    Description: Inspection VPC TGW Subnet A
+    Default: '10.0.0.0/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  InspectionFWCidrA:
+    Type: String
+    Description: Inspection VPC FW Subnet A
+    Default: '10.0.0.128/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressTGWCidrA:
+    Type: String
+    Description: Egress VPC TGW Subnet A
+    Default: '10.0.1.0/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressPubCidrA:
+    Type: String
+    Description: Egress VPC Public Subnet A
+    Default: '10.0.1.128/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EipA:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-A (optional)
+    Default: ''
+
+  InspectionTGWCidrB:
+    Type: String
+    Description: Inspection VPC TGW Subnet B
+    Default: '10.0.0.32/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  InspectionFWCidrB:
+    Type: String
+    Description: Inspection VPC FW Subnet B
+    Default: '10.0.0.160/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressTGWCidrB:
+    Type: String
+    Description: Egress VPC TGW Subnet B
+    Default: '10.0.1.32/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressPubCidrB:
+    Type: String
+    Description: Egress VPC Public Subnet B
+    Default: '10.0.1.160/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EipB:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-B (optional)
+    Default: ''
+
+  InspectionTGWCidrC:
+    Type: String
+    Description: Inspection VPC TGW Subnet C
+    Default: '10.0.0.64/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  InspectionFWCidrC:
+    Type: String
+    Description: Inspection VPC FW Subnet C
+    Default: '10.0.0.192/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressTGWCidrC:
+    Type: String
+    Description: Egress VPC TGW Subnet C
+    Default: '10.0.1.64/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressPubCidrC:
+    Type: String
+    Description: Egress VPC Public Subnet C
+    Default: '10.0.1.192/27'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EipC:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-C (optional)
+    Default: ''
+
+
+Conditions:
+
+  CreateEipA: !Equals [!Ref EipA, "" ]
+
+  CreateEipB: !Equals [!Ref EipB, "" ]
+
+  CreateEipC: !Equals [!Ref EipC, "" ]
+
+
+Resources:
+
+  InspectionVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref InspectionVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC'
+
+  EgressVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref EgressVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC' 
+
+  InetGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName} Egress VPC Internet gateway'
+
+  InetGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref EgressVPC
+      InternetGatewayId: !Ref InetGW
+
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public route-table'
+
+  PubDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InetGW
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+
+
+
+  InspectionTGWSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref InspectionTGWCidrA
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-A'
+
+  InspectionFWSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref InspectionFWCidrA
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-A'
+
+  EgressTGWSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref EgressTGWCidrA
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-A'
+
+  EgressPubSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref EgressPubCidrA
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-A'
+  NatGwA:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubnetA
+      AllocationId: !If [ CreateEipA, !GetAtt NatEipA.AllocationId, !Ref EipA ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-A'
+
+  NatEipA:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipA
+    Properties:
+      Domain: vpc
+
+
+
+  InspectionTGWSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref InspectionTGWCidrB
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-B'
+
+  InspectionFWSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref InspectionFWCidrB
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-B'
+
+  EgressTGWSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref EgressTGWCidrB
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-B'
+
+  EgressPubSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref EgressPubCidrB
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-B'
+  NatGwB:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubnetB
+      AllocationId: !If [ CreateEipB, !GetAtt NatEipB.AllocationId, !Ref EipB ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-B'
+
+  NatEipB:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipB
+    Properties:
+      Domain: vpc
+
+
+
+  InspectionTGWSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref InspectionTGWCidrC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-C'
+
+  InspectionFWSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref InspectionFWCidrC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-C'
+
+  EgressTGWSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref EgressTGWCidrC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-C'
+
+  EgressPubSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref EgressPubCidrC
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-C'
+  NatGwC:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubnetC
+      AllocationId: !If [ CreateEipC, !GetAtt NatEipC.AllocationId, !Ref EipC ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-C'
+
+  NatEipC:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipC
+    Properties:
+      Domain: vpc
+
+
+
+
+Outputs:
+
+  InspectionVpcId:
+    Description: VPC ID
+    Value: !Ref InspectionVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-InspectionVpcId'
+
+  EgressVpcId:
+    Description: VPC ID
+    Value: !Ref EgressVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-EgressVpcId'

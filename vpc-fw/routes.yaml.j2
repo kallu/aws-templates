@@ -1,0 +1,48 @@
+  PrivRouteTable{{x.az|upper}}:
+    Type: AWS::EC2::RouteTable
+    Condition: Priv{{x.az|upper}}
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} private route-table-{{x.az|upper}}'
+
+  PrivSubnetRouting{{x.az|upper}}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: Priv{{x.az|upper}}
+    Properties:
+      RouteTableId: !Ref PrivRouteTable{{x.az|upper}}
+      SubnetId: !Ref PrivSubnet{{x.az|upper}}
+
+  PrivDefaultRoute{{x.az|upper}}:
+    Type: AWS::EC2::Route
+    Condition: HasDefaultRoute{{x.az|upper}}
+    Properties:
+      RouteTableId: !Ref PrivRouteTable{{x.az|upper}}
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !If
+        - InternetViaPublicNAT
+        - !Ref NatGw{{x.az|upper}}
+        - !Ref NatGwIntra{{x.az|upper}}
+
+  PrivIntranetRoute{{x.az|upper}}:
+    Type: AWS::EC2::Route
+    Condition: HasIntranetRoute{{x.az|upper}}
+    Properties:
+      RouteTableId: !Ref PrivRouteTable{{x.az|upper}}
+      DestinationCidrBlock: !Ref IntraCIDR
+      NatGatewayId: !Ref NatGwIntra{{x.az|upper}}
+
+  IntraSubnetRouting{{x.az|upper}}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: Intra{{x.az|upper}}
+    Properties:
+      RouteTableId: !Ref IntraRouteTable
+      SubnetId: !Ref IntraSubnet{{x.az|upper}}
+
+  PubSubnetRouting{{x.az|upper}}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: Pub{{x.az|upper}}
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref PubSubnet{{x.az|upper}}

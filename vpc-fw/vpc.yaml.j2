@@ -1,0 +1,144 @@
+{#
+   This is Jinja2 template that will generate Cloudformation YAML template
+   with input from config.json in this same directory.
+
+   Install Jinja CLI
+
+   % pip install jinja-cli
+
+   then render Cloudformation template
+
+   % jinja2 vpc.yaml.j2 config.json > vpc.yaml
+#}
+
+{# Comma separated list of strings with letter X replaced by AZ identifier in caps #}
+{% macro ForAllAZs(az,format) -%}
+{% for x in az -%}
+{{ format|replace('X', x.az.upper()) }}{{ ", " if not loop.last else "" }}
+{%- endfor %}
+{%- endmacro %}
+
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Inspection + Egress VPCs v1.0.0
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: Inspection VPC
+        Parameters:
+          - InspectionVpcCidr
+{%- for x in AZ %}
+          - InspectionTGWCidr{{x.az|upper}}
+{%- endfor %}
+{%- for x in AZ %}
+          - InspectionFWCidr{{x.az|upper}}
+{%- endfor %}
+      -
+        Label:
+          default: Central Egress VPC
+        Parameters:
+          - EgressVpcCidr
+{%- for x in AZ %}
+          - EgressTGWCidr{{x.az|upper}}
+{%- endfor %}
+{%- for x in AZ %}
+          - EgressPubCidr{{x.az|upper}}
+{%- endfor %}
+{%- for x in AZ %}
+          - Eip{{x.az|upper}}
+{%- endfor %}
+
+Parameters:
+
+  InspectionVpcCidr:
+    Type: String
+    Description: Inspection VPC CIDR
+    Default: '{{VPC.inspection}}'
+    AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
+
+  EgressVpcCidr:
+    Type: String
+    Description: Egress VPC CIDR
+    Default: '{{VPC.egress}}'
+    AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
+
+{% for x in AZ %}
+  InspectionTGWCidr{{x.az|upper}}:
+    Type: String
+    Description: Inspection VPC TGW Subnet {{x.az|upper}}
+    Default: '{{x.inspection_tgw}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+  InspectionFWCidr{{x.az|upper}}:
+    Type: String
+    Description: Inspection VPC FW Subnet {{x.az|upper}}
+    Default: '{{x.inspection_fw}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+  EgressTGWCidr{{x.az|upper}}:
+    Type: String
+    Description: Egress VPC TGW Subnet {{x.az|upper}}
+    Default: '{{x.egress_tgw}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+  EgressPubCidr{{x.az|upper}}:
+    Type: String
+    Description: Egress VPC Public Subnet {{x.az|upper}}
+    Default: '{{x.egress_pub}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+  Eip{{x.az|upper}}:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-{{x.az|upper}} (optional)
+    Default: ''
+{% endfor %}
+
+Conditions:
+{% for x in AZ %}
+  CreateEip{{x.az|upper}}: !Equals [!Ref Eip{{x.az|upper}}, "" ]
+{% endfor %}
+
+Resources:
+
+  InspectionVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref InspectionVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC'
+
+  EgressVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref EgressVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC' 
+
+{% include 'internetaccess.yaml.j2' %}
+
+{% for x in AZ %}
+{% include 'subnets.yaml.j2' %}
+{% include 'nat.yaml.j2' %}
+{# {% include 'routes.yaml.j2' %} #}
+{% endfor %}
+
+Outputs:
+
+  InspectionVpcId:
+    Description: VPC ID
+    Value: !Ref InspectionVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-InspectionVpcId'
+
+  EgressVpcId:
+    Description: VPC ID
+    Value: !Ref EgressVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-EgressVpcId'

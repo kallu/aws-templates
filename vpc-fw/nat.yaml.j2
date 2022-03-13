@@ -1,0 +1,15 @@
+  NatGw{{x.az|upper}}:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubnet{{x.az|upper}}
+      AllocationId: !If [ CreateEip{{x.az|upper}}, !GetAtt NatEip{{x.az|upper}}.AllocationId, !Ref Eip{{x.az|upper}} ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-{{x.az|upper}}'
+
+  NatEip{{x.az|upper}}:
+    Type: AWS::EC2::EIP
+    Condition: CreateEip{{x.az|upper}}
+    Properties:
+      Domain: vpc
