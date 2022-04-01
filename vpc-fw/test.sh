@@ -1,13 +1,14 @@
 #!/bin/sh
 
 STATUS="OK"
+TEMPLATE=vpc-egress.yaml
 
-jinja2 vpc.yaml.j2 config.json > vpc.yaml
+jinja2 ${TEMPLATE}.j2 config.json > ${TEMPLATE}
 
-aws cloudformation validate-template --template-body file://vpc.yaml
-[ $? -eq 0 ] || STATUS="FAILED"
+# aws cloudformation validate-template --template-body file://${TEMPLATE}
+# [ $? -eq 0 ] || STATUS="FAILED"
 
-cfn-lint vpc.yaml
+cfn-lint ${TEMPLATE}
 [ $? -eq 0 ] || STATUS="FAILED"
 
 echo $STATUS

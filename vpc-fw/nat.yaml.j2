@@ -13,3 +13,6 @@
     Condition: CreateEip{{x.az|upper}}
     Properties:
       Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-{{x.az|upper}}'

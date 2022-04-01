@@ -1,0 +1,455 @@
+
+
+
+
+
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Egress VPCs v1.0.0
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: Egress VPC
+        Parameters:
+          - EgressVpcCidr
+          - EgressTGWCidrA
+          - EgressTGWCidrB
+          - EgressTGWCidrC
+          - EgressPubCidrA
+          - EgressPubCidrB
+          - EgressPubCidrC
+          - EipA
+          - EipB
+          - EipC
+      -
+        Label:
+          default: Routing to TGW
+        Parameters:
+          - TgwRouteCidr1
+          - TgwRouteCidr2
+          - TgwRouteCidr3
+
+Parameters:
+
+  EgressVpcCidr:
+    Type: String
+    Description: Egress VPC CIDR
+    Default: '10.0.0.128/25'
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+
+
+  EgressTGWCidrA:
+    Type: String
+    Description: Egress VPC TGW Subnet A
+    Default: '10.0.0.128/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressPubCidrA:
+    Type: String
+    Description: Egress VPC Public Subnet A
+    Default: '10.0.0.144/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EipA:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-A (optional)
+    Default: ''
+
+  EgressTGWCidrB:
+    Type: String
+    Description: Egress VPC TGW Subnet B
+    Default: '10.0.0.160/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressPubCidrB:
+    Type: String
+    Description: Egress VPC Public Subnet B
+    Default: '10.0.0.176/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EipB:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-B (optional)
+    Default: ''
+
+  EgressTGWCidrC:
+    Type: String
+    Description: Egress VPC TGW Subnet C
+    Default: '10.0.0.192/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressPubCidrC:
+    Type: String
+    Description: Egress VPC Public Subnet C
+    Default: '10.0.0.208/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EipC:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-C (optional)
+    Default: ''
+
+
+  TgwAttachment:
+    Type: String
+    Description: TGW attachment ID (optional)
+    Default: ''
+  TgwRouteCidr1:
+    Type: String
+    Description: CIDR to be routed to TGW (optional)
+    Default: ''
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  TgwRouteCidr2:
+    Type: String
+    Description: CIDR to be routed to TGW (optional)
+    Default: ''
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  TgwRouteCidr3:
+    Type: String
+    Description: CIDR to be routed to TGW (optional)
+    Default: ''
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+
+Conditions:
+  CreateEipA: !Equals [!Ref EipA, "" ]
+  CreateEipB: !Equals [!Ref EipB, "" ]
+  CreateEipC: !Equals [!Ref EipC, "" ]
+  HasTgwAttachment: !Not [ !Equals [!Ref TgwAttachment, "" ] ]
+  HasTgwRouteCidr1: !Not [ !Equals [!Ref TgwRouteCidr1, "" ] ]
+  AddTgwRoute1: !And [ Condition: HasTgwAttachment, Condition: HasTgwRouteCidr1 ]
+  HasTgwRouteCidr2: !Not [ !Equals [!Ref TgwRouteCidr2, "" ] ]
+  AddTgwRoute2: !And [ Condition: HasTgwAttachment, Condition: HasTgwRouteCidr2 ]
+  HasTgwRouteCidr3: !Not [ !Equals [!Ref TgwRouteCidr3, "" ] ]
+  AddTgwRoute3: !And [ Condition: HasTgwAttachment, Condition: HasTgwRouteCidr3 ]
+  
+Resources:
+
+  EgressVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref EgressVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC' 
+
+  InetGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName} Egress VPC Internet gateway'
+
+  InetGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref EgressVPC
+      InternetGatewayId: !Ref InetGW
+
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public route-table'
+
+  PubDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+
+  PubTGWRoute1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      TransitGatewayId: !Ref TgwAttachment
+  PubTGWRoute2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      TransitGatewayId: !Ref TgwAttachment
+  PubTGWRoute3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      TransitGatewayId: !Ref TgwAttachment
+  EgressTGWSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref EgressTGWCidrA
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-A'
+
+  EgressPubSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref EgressPubCidrA
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-A'
+  NatGwA:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubnetA
+      AllocationId: !If [ CreateEipA, !GetAtt NatEipA.AllocationId, !Ref EipA ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-A'
+
+  NatEipA:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipA
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-A'
+
+  EgressTGWRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-A'
+
+  EgressTGWSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableA
+      SubnetId: !Ref EgressTGWSubnetA
+
+  EgressTGWDefaultRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableA
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwA
+
+  EgressPubSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref EgressPubSubnetA
+
+  EgressTGWRouteA1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableA
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      TransitGatewayId: !Ref TgwAttachment
+  EgressTGWRouteA2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableA
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      TransitGatewayId: !Ref TgwAttachment
+  EgressTGWRouteA3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableA
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      TransitGatewayId: !Ref TgwAttachment
+  EgressTGWSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref EgressTGWCidrB
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-B'
+
+  EgressPubSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref EgressPubCidrB
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-B'
+  NatGwB:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubnetB
+      AllocationId: !If [ CreateEipB, !GetAtt NatEipB.AllocationId, !Ref EipB ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-B'
+
+  NatEipB:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipB
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-B'
+
+  EgressTGWRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-B'
+
+  EgressTGWSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableB
+      SubnetId: !Ref EgressTGWSubnetB
+
+  EgressTGWDefaultRouteB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableB
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwB
+
+  EgressPubSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref EgressPubSubnetB
+
+  EgressTGWRouteB1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableB
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      TransitGatewayId: !Ref TgwAttachment
+  EgressTGWRouteB2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableB
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      TransitGatewayId: !Ref TgwAttachment
+  EgressTGWRouteB3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableB
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      TransitGatewayId: !Ref TgwAttachment
+  EgressTGWSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref EgressTGWCidrC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-C'
+
+  EgressPubSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref EgressPubCidrC
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-C'
+  NatGwC:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubnetC
+      AllocationId: !If [ CreateEipC, !GetAtt NatEipC.AllocationId, !Ref EipC ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-C'
+
+  NatEipC:
+    Type: AWS::EC2::EIP
+    Condition: CreateEipC
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-C'
+
+  EgressTGWRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-C'
+
+  EgressTGWSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableC
+      SubnetId: !Ref EgressTGWSubnetC
+
+  EgressTGWDefaultRouteC:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableC
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwC
+
+  EgressPubSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref EgressPubSubnetC
+
+  EgressTGWRouteC1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableC
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      TransitGatewayId: !Ref TgwAttachment
+  EgressTGWRouteC2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableC
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      TransitGatewayId: !Ref TgwAttachment
+  EgressTGWRouteC3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableC
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      TransitGatewayId: !Ref TgwAttachment
+
+Outputs:
+
+  EgressVpcId:
+    Description: VPC ID
+    Value: !Ref EgressVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-EgressVpcId'

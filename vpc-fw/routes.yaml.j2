@@ -1,31 +1,3 @@
-  InspectionTGWRouteTable{{x.az|upper}}:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref InspectionVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-{{x.az|upper}}'
-
-  InspectionTGWSubnetRouting{{x.az|upper}}:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref InspectionTGWRouteTable{{x.az|upper}}
-      SubnetId: !Ref InspectionTGWSubnet{{x.az|upper}}
-
-  InspectionFWRouteTable{{x.az|upper}}:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref InspectionVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table-{{x.az|upper}}'
-
-  InspectionFWSubnetRouting{{x.az|upper}}:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref InspectionFWRouteTable{{x.az|upper}}
-      SubnetId: !Ref InspectionFWSubnet{{x.az|upper}}
-
   EgressTGWRouteTable{{x.az|upper}}:
     Type: AWS::EC2::RouteTable
     Properties: 
@@ -51,5 +23,4 @@
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressTGWSubnet{{x.az|upper}}
-      
+      SubnetId: !Ref EgressPubSubnet{{x.az|upper}}

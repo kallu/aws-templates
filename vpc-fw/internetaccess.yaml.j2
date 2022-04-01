@@ -21,7 +21,6 @@
 
   PubDefaultRoute:
     Type: AWS::EC2::Route
-    DependsOn: InetGW
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: '0.0.0.0/0'

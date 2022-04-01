@@ -1,25 +1,3 @@
-  InspectionTGWSubnet{{x.az|upper}}:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref InspectionVPC
-      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
-      CidrBlock: !Ref InspectionTGWCidr{{x.az|upper}}
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-{{x.az|upper}}'
-
-  InspectionFWSubnet{{x.az|upper}}:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref InspectionVPC
-      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
-      CidrBlock: !Ref InspectionFWCidr{{x.az|upper}}
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-{{x.az|upper}}'
-
   EgressTGWSubnet{{x.az|upper}}:
     Type: AWS::EC2::Subnet
     Properties:
