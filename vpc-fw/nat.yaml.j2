@@ -1,20 +1,20 @@
-  NatGw{{x.az|upper}}:
+  NatGw{{x.az|lower}}:
     Type: AWS::EC2::NatGateway
     Properties:
       ConnectivityType: public
-      SubnetId: !Ref EgressPubSubnet{{x.az|upper}}
-      AllocationId: !If [ CreateEip{{x.az|upper}}, !GetAtt NatEip{{x.az|upper}}.AllocationId, !Ref Eip{{x.az|upper}} ]
+      SubnetId: !Ref EgressPubSubnet{{x.az|lower}}
+      AllocationId: !If [ CreateEip{{x.az|lower}}, !GetAtt NatEip{{x.az|lower}}.AllocationId, !Ref Eip{{x.az|lower}} ]
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-{{x.az|lower}}'
 
-  NatEip{{x.az|upper}}:
+  NatEip{{x.az|lower}}:
     Type: AWS::EC2::EIP
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Condition: CreateEip{{x.az|upper}}
+#    DeletionPolicy: Retain
+#    UpdateReplacePolicy: Retain
+    Condition: CreateEip{{x.az|lower}}
     Properties:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-{{x.az|lower}}'

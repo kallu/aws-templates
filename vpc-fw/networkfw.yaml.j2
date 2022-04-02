@@ -1,48 +1,63 @@
-  SampleFirewall:
-    Type: AWS::NetworkFirewall::Firewall
-    Properties:
-      FirewallName: SampleFirewallName
-      FirewallPolicyArn: !Ref SampleFirewallPolicy
-      VpcId: !Ref VPC
-      SubnetMappings:
-        - SubnetId: !Ref SampleSubnet1
-        - SubnetId: !Ref SampleSubnet2
-      Description: Firewall description goes here
+  FwRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
       Tags:
         - Key: Name
-          Value: Bar
+          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table'
 
-  SampleFirewallPolicy:
+  FwDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: HasInspectionTgwAttachment
+    Properties:
+      RouteTableId: !Ref FwRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      TransitGatewayId: !Ref InspectionTgwAttachment
+
+{%- for x in AZ %}
+  NetworkFW{{x.az|lower}}:
+    Type: AWS::NetworkFirewall::Firewall
+    Properties:
+      FirewallName: !Sub '${AWS::StackName}-{{x.az|lower}}'
+      FirewallPolicyArn: !Ref DefaultFirewallPolicy
+      VpcId: !Ref InspectionVPC
+      SubnetMappings:
+        - SubnetId: !Ref InspectionFWSubnet{{x.az|lower}}
+      Description: Network firewall to inspect outbound traffic to internet
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} network firewall AZ-{{x.az|lower}}'
+{%- endfor %}
+
+  DefaultFirewallPolicy:
     Type: 'AWS::NetworkFirewall::FirewallPolicy'
     Properties:
-      FirewallPolicyName: SampleFirewallPolicyName
+      FirewallPolicyName: !Sub "${AWS::StackName}-default-policy"
       FirewallPolicy:
         StatelessDefaultActions:
           - 'aws:pass'
         StatelessFragmentDefaultActions:
-          - 'aws:drop'
-        StatefulRuleGroupReferences:
-          - ResourceArn: !Ref SampleStatefulRuleGroup1
-        StatelessRuleGroupReferences:
-          - ResourceArn: !Ref SampleStatelessRuleGroup
-            Priority: 100
-      Description: FirewallPolicy description goes here
+          - 'aws:pass'
+      Description: Default firewall policy passing everything
       Tags:
         - Key: Name
-          Value: Bar
+          Value: !Sub '${AWS::StackName} default policy'
 
-  SampleStatefulRulegroup:
-    Type: 'AWS::NetworkFirewall::RuleGroup'
-    Properties:
-      RuleGroupName: SampleStatefulRulegroupName
-      Type: STATEFUL
-      RuleGroup:
-        RulesSource:
-          RulesString: >-
-            pass tcp 10.20.20.0/24 45400:45500 <> 10.10.10.0/24 5203
-            (msg:"test";sid:1;rev:1;)
-      Capacity: 100
-      Description: Rulegroup description goes here
-      Tags:
-        - Key: Foo
-          Value: Bar
+# ADD DEFAULT POLICY AND RuleGroup
+# Should there be 1 NFW and then fix the cross AZ routing manually?
+
+#  SampleStatefulRulegroup:
+#    Type: 'AWS::NetworkFirewall::RuleGroup'
+#    Properties:
+#      RuleGroupName: SampleStatefulRulegroupName
+#      Type: STATEFUL
+#      RuleGroup:
+#        RulesSource:
+#          RulesString: >-
+#            pass tcp 10.20.20.0/24 45400:45500 <> 10.10.10.0/24 5203
+#            (msg:"test";sid:1;rev:1;)
+#      Capacity: 100
+#      Description: Rulegroup description goes here
+#      Tags:
+#        - Key: Foo
+#          Value: Bar

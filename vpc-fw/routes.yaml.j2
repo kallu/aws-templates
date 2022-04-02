@@ -1,26 +1,46 @@
-  EgressTGWRouteTable{{x.az|upper}}:
+  EgressTGWRouteTable{{x.az|lower}}:
     Type: AWS::EC2::RouteTable
     Properties: 
       VpcId: !Ref EgressVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-{{x.az|lower}}'
 
-  EgressTGWSubnetRouting{{x.az|upper}}:
+  EgressTGWSubnetRouting{{x.az|lower}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTable{{x.az|upper}}
-      SubnetId: !Ref EgressTGWSubnet{{x.az|upper}}
+      RouteTableId: !Ref EgressTGWRouteTable{{x.az|lower}}
+      SubnetId: !Ref EgressTGWSubnet{{x.az|lower}}
 
-  EgressTGWDefaultRoute{{x.az|upper}}:
+  EgressTGWDefaultRoute{{x.az|lower}}:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTable{{x.az|upper}}
+      RouteTableId: !Ref EgressTGWRouteTable{{x.az|lower}}
       DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGw{{x.az|upper}}
+      NatGatewayId: !Ref NatGw{{x.az|lower}}
 
-  EgressPubSubnetRouting{{x.az|upper}}:
+  EgressPubSubnetRouting{{x.az|lower}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressPubSubnet{{x.az|upper}}
+      SubnetId: !Ref EgressPubSubnet{{x.az|lower}}
+
+  InspectionTGWRouteTable{{x.az|lower}}:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-{{x.az|lower}}'
+
+  InspectionTGWSubnetRouting{{x.az|lower}}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTable{{x.az|lower}}
+      SubnetId: !Ref InspectionTGWSubnet{{x.az|lower}}
+
+  InspectionTGWSFWRouting{{x.az|lower}}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref FwRouteTable
+      SubnetId: !Ref InspectionFWSubnet{{x.az|lower}}

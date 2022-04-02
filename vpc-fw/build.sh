@@ -1,7 +1,7 @@
 #!/bin/sh
 
 STATUS="OK"
-TEMPLATES=vpc-egress.yaml
+TEMPLATES="vpc.yaml"
 
 for TEMPLATE in $TEMPLATES
 do

@@ -5,8 +5,8 @@
       SubnetIds: 
       {%- for x in AZ %}
       - !If
-        - Intra{{x.az|upper}}
-        - !Ref IntraSubnet{{x.az|upper}}
+        - Intra{{x.az|lower}}
+        - !Ref IntraSubnet{{x.az|lower}}
         - !Ref AWS::NoValue
       {%- endfor %}
       TransitGatewayId: !Ref TransitGwId

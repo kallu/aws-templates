@@ -1,21 +1,43 @@
-  EgressTGWSubnet{{x.az|upper}}:
+  EgressTGWSubnet{{x.az|lower}}:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EgressVPC
       AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
-      CidrBlock: !Ref EgressTGWCidr{{x.az|upper}}
+      CidrBlock: !Ref EgressTGWCidr{{x.az|lower}}
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-{{x.az|lower}}'
 
-  EgressPubSubnet{{x.az|upper}}:
+  EgressPubSubnet{{x.az|lower}}:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EgressVPC
       AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
-      CidrBlock: !Ref EgressPubCidr{{x.az|upper}}
+      CidrBlock: !Ref EgressPubCidr{{x.az|lower}}
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-{{x.az|lower}}'
+
+  InspectionTGWSubnet{{x.az|lower}}:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
+      CidrBlock: !Ref InspectionTGWCidr{{x.az|lower}}
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-{{x.az|lower}}'
+
+  InspectionFWSubnet{{x.az|lower}}:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
+      CidrBlock: !Ref InspectionFWCidr{{x.az|lower}}
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-{{x.az|lower}}'

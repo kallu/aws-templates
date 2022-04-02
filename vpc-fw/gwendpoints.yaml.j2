@@ -15,8 +15,8 @@
         - !Ref AWS::NoValue
 {%- for x in AZ %}
       - !If
-        - Priv{{x.az|upper}}
-        - !Ref PrivRouteTable{{x.az|upper}}
+        - Priv{{x.az|lower}}
+        - !Ref PrivRouteTable{{x.az|lower}}
         - !Ref AWS::NoValue
 {%- endfor %}
 
@@ -37,7 +37,7 @@
         - !Ref AWS::NoValue
 {%- for x in AZ %}
       - !If
-        - Priv{{x.az|upper}}
-        - !Ref PrivRouteTable{{x.az|upper}}
+        - Priv{{x.az|lower}}
+        - !Ref PrivRouteTable{{x.az|lower}}
         - !Ref AWS::NoValue
 {%- endfor %}

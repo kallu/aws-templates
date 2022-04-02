@@ -12,37 +12,38 @@ Metadata:
     ParameterGroups:
       -
         Label:
-          default: Inspection VPC
+          default: Egress VPC
         Parameters:
           - InspectionVpcCidr
-          - InspectionTGWCidrA
-          - InspectionTGWCidrB
-          - InspectionTGWCidrC
-          - InspectionFWCidrA
-          - InspectionFWCidrB
-          - InspectionFWCidrC
+          - InspectionTGWCidra
+          - InspectionTGWCidrb
+          - InspectionTGWCidrc
+          - InspectionFWCidra
+          - InspectionFWCidrb
+          - InspectionFWCidrc
       -
         Label:
-          default: Central Egress VPC
+          default: Egress VPC
         Parameters:
           - EgressVpcCidr
-          - EgressTGWCidrA
-          - EgressTGWCidrB
-          - EgressTGWCidrC
-          - EgressPubCidrA
-          - EgressPubCidrB
-          - EgressPubCidrC
-          - EipA
-          - EipB
-          - EipC
+          - EgressTGWCidra
+          - EgressTGWCidrb
+          - EgressTGWCidrc
+          - EgressPubCidra
+          - EgressPubCidrb
+          - EgressPubCidrc
+          - Eipa
+          - Eipb
+          - Eipc
+      -
+        Label:
+          default: Routing to TGW
+        Parameters:
+          - TgwRouteCidr1
+          - TgwRouteCidr2
+          - TgwRouteCidr3
 
 Parameters:
-
-  InspectionVpcCidr:
-    Type: String
-    Description: Inspection VPC CIDR
-    Default: '10.0.0.0/25'
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
 
   EgressVpcCidr:
     Type: String
@@ -50,104 +51,128 @@ Parameters:
     Default: '10.0.0.128/25'
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
 
+  InspectionVpcCidr:
+    Type: String
+    Description: Inspection VPC CIDR
+    Default: '10.0.0.0/25'
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
 
-  InspectionTGWCidrA:
+
+  EgressTGWCidra:
     Type: String
-    Description: Inspection VPC TGW Subnet A
-    Default: '10.0.0.0/28'
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  InspectionFWCidrA:
-    Type: String
-    Description: Inspection VPC FW Subnet A
-    Default: '10.0.0.16/28'
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  EgressTGWCidrA:
-    Type: String
-    Description: Egress VPC TGW Subnet A
+    Description: Egress VPC TGW Subnet a
     Default: '10.0.0.128/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  EgressPubCidrA:
+  InspectionTGWCidra:
     Type: String
-    Description: Egress VPC Public Subnet A
+    Description: Inspection VPC TGW Subnet a
+    Default: '10.0.0.0/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressPubCidra:
+    Type: String
+    Description: Egress VPC Public Subnet a
     Default: '10.0.0.144/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  EipA:
+  InspectionFWCidra:
     Type: String
-    Description: Pre-allocated EIP ID for AZ-A (optional)
+    Description: Inspection VPC FW Subnet a
+    Default: '10.0.0.16/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  Eipa:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-a (optional)
     Default: ''
 
-  InspectionTGWCidrB:
+  EgressTGWCidrb:
     Type: String
-    Description: Inspection VPC TGW Subnet B
-    Default: '10.0.0.32/28'
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  InspectionFWCidrB:
-    Type: String
-    Description: Inspection VPC FW Subnet B
-    Default: '10.0.0.48/28'
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  EgressTGWCidrB:
-    Type: String
-    Description: Egress VPC TGW Subnet B
+    Description: Egress VPC TGW Subnet b
     Default: '10.0.0.160/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  EgressPubCidrB:
+  InspectionTGWCidrb:
     Type: String
-    Description: Egress VPC Public Subnet B
+    Description: Inspection VPC TGW Subnet b
+    Default: '10.0.0.32/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressPubCidrb:
+    Type: String
+    Description: Egress VPC Public Subnet b
     Default: '10.0.0.176/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  EipB:
+  InspectionFWCidrb:
     Type: String
-    Description: Pre-allocated EIP ID for AZ-B (optional)
+    Description: Inspection VPC FW Subnet b
+    Default: '10.0.0.48/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  Eipb:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-b (optional)
     Default: ''
 
-  InspectionTGWCidrC:
+  EgressTGWCidrc:
     Type: String
-    Description: Inspection VPC TGW Subnet C
-    Default: '10.0.0.64/28'
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  InspectionFWCidrC:
-    Type: String
-    Description: Inspection VPC FW Subnet C
-    Default: '10.0.0.80/28'
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  EgressTGWCidrC:
-    Type: String
-    Description: Egress VPC TGW Subnet C
+    Description: Egress VPC TGW Subnet c
     Default: '10.0.0.192/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  EgressPubCidrC:
+  InspectionTGWCidrc:
     Type: String
-    Description: Egress VPC Public Subnet C
+    Description: Inspection VPC TGW Subnet c
+    Default: '10.0.0.64/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  EgressPubCidrc:
+    Type: String
+    Description: Egress VPC Public Subnet c
     Default: '10.0.0.208/28'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-  EipC:
+  InspectionFWCidrc:
     Type: String
-    Description: Pre-allocated EIP ID for AZ-C (optional)
+    Description: Inspection VPC FW Subnet c
+    Default: '10.0.0.80/28'
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  Eipc:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-c (optional)
     Default: ''
 
 
+  EgressTgwAttachment:
+    Type: String
+    Description: TGW attached to egress VPC (optional)
+    Default: ''
+
+  InspectionTgwAttachment:
+    Type: String
+    Description: TGW attache to inspection VPC (optional)
+    Default: ''
+  TgwRouteCidr1:
+    Type: String
+    Description: CIDR to be routed from Egress to TGW (optional)
+    Default: ''
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  TgwRouteCidr2:
+    Type: String
+    Description: CIDR to be routed from Egress to TGW (optional)
+    Default: ''
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+  TgwRouteCidr3:
+    Type: String
+    Description: CIDR to be routed from Egress to TGW (optional)
+    Default: ''
+    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+
 Conditions:
-
-  CreateEipA: !Equals [!Ref EipA, "" ]
-
-  CreateEipB: !Equals [!Ref EipB, "" ]
-
-  CreateEipC: !Equals [!Ref EipC, "" ]
-
-
+  CreateEipa: !Equals [!Ref Eipa, "" ]
+  CreateEipb: !Equals [!Ref Eipb, "" ]
+  CreateEipc: !Equals [!Ref Eipc, "" ]
+  HasEgressTgwAttachment: !Not [ !Equals [!Ref EgressTgwAttachment, "" ] ]
+  HasInspectionTgwAttachment: !Not [ !Equals [!Ref InspectionTgwAttachment, "" ] ]
+  HasTgwRouteCidr1: !Not [ !Equals [!Ref TgwRouteCidr1, "" ] ]
+  AddTgwRoute1: !And [ Condition: HasEgressTgwAttachment, Condition: HasTgwRouteCidr1 ]
+  HasTgwRouteCidr2: !Not [ !Equals [!Ref TgwRouteCidr2, "" ] ]
+  AddTgwRoute2: !And [ Condition: HasEgressTgwAttachment, Condition: HasTgwRouteCidr2 ]
+  HasTgwRouteCidr3: !Not [ !Equals [!Ref TgwRouteCidr3, "" ] ]
+  AddTgwRoute3: !And [ Condition: HasEgressTgwAttachment, Condition: HasTgwRouteCidr3 ]
+  
 Resources:
-
-  InspectionVPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: !Ref InspectionVpcCidr
-      EnableDnsSupport: true
-      EnableDnsHostnames: true
-      InstanceTenancy: default
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC'
 
   EgressVPC:
     Type: AWS::EC2::VPC
@@ -158,354 +183,18 @@ Resources:
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC' 
+          Value: !Sub '${AWS::StackName} Egress VPC'
 
-
-  InspectionTGWSubnetA:
-    Type: AWS::EC2::Subnet
+  InspectionVPC:
+    Type: AWS::EC2::VPC
     Properties:
-      VpcId: !Ref InspectionVPC
-      AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Ref InspectionTGWCidrA
-      MapPublicIpOnLaunch: false
+      CidrBlock: !Ref InspectionVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-A'
-
-  InspectionFWSubnetA:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref InspectionVPC
-      AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Ref InspectionFWCidrA
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-A'
-
-  EgressTGWSubnetA:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref EgressVPC
-      AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Ref EgressTGWCidrA
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-A'
-
-  EgressPubSubnetA:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref EgressVPC
-      AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Ref EgressPubCidrA
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-A'
-  NatGwA:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      ConnectivityType: public
-      SubnetId: !Ref EgressPubSubnetA
-      AllocationId: !If [ CreateEipA, !GetAtt NatEipA.AllocationId, !Ref EipA ]
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-A'
-
-  NatEipA:
-    Type: AWS::EC2::EIP
-    Condition: CreateEipA
-    Properties:
-      Domain: vpc
-
-  InspectionTGWRouteTableA:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref InspectionVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-A'
-
-  InspectionTGWSubnetRoutingA:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref InspectionTGWRouteTableA
-      SubnetId: !Ref InspectionTGWSubnetA
-
-  InspectionFWRouteTableA:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref InspectionVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table-A'
-
-  InspectionFWSubnetRoutingA:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref InspectionFWRouteTableA
-      SubnetId: !Ref InspectionFWSubnetA
-
-  EgressTGWRouteTableA:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref EgressVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-A'
-
-  EgressTGWSubnetRoutingA:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref EgressTGWRouteTableA
-      SubnetId: !Ref EgressTGWSubnetA
-
-  EgressTGWDefaultRouteA:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref EgressTGWRouteTableA
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwA
-
-  EgressPubSubnetRoutingA:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressTGWSubnetA
-      
-
-  InspectionTGWSubnetB:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref InspectionVPC
-      AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Ref InspectionTGWCidrB
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-B'
-
-  InspectionFWSubnetB:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref InspectionVPC
-      AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Ref InspectionFWCidrB
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-B'
-
-  EgressTGWSubnetB:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref EgressVPC
-      AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Ref EgressTGWCidrB
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-B'
-
-  EgressPubSubnetB:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref EgressVPC
-      AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Ref EgressPubCidrB
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-B'
-  NatGwB:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      ConnectivityType: public
-      SubnetId: !Ref EgressPubSubnetB
-      AllocationId: !If [ CreateEipB, !GetAtt NatEipB.AllocationId, !Ref EipB ]
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-B'
-
-  NatEipB:
-    Type: AWS::EC2::EIP
-    Condition: CreateEipB
-    Properties:
-      Domain: vpc
-
-  InspectionTGWRouteTableB:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref InspectionVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-B'
-
-  InspectionTGWSubnetRoutingB:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref InspectionTGWRouteTableB
-      SubnetId: !Ref InspectionTGWSubnetB
-
-  InspectionFWRouteTableB:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref InspectionVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table-B'
-
-  InspectionFWSubnetRoutingB:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref InspectionFWRouteTableB
-      SubnetId: !Ref InspectionFWSubnetB
-
-  EgressTGWRouteTableB:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref EgressVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-B'
-
-  EgressTGWSubnetRoutingB:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref EgressTGWRouteTableB
-      SubnetId: !Ref EgressTGWSubnetB
-
-  EgressTGWDefaultRouteB:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref EgressTGWRouteTableB
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwB
-
-  EgressPubSubnetRoutingB:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressTGWSubnetB
-      
-
-  InspectionTGWSubnetC:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref InspectionVPC
-      AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Ref InspectionTGWCidrC
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-C'
-
-  InspectionFWSubnetC:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref InspectionVPC
-      AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Ref InspectionFWCidrC
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-C'
-
-  EgressTGWSubnetC:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref EgressVPC
-      AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Ref EgressTGWCidrC
-      MapPublicIpOnLaunch: false
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-C'
-
-  EgressPubSubnetC:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref EgressVPC
-      AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Ref EgressPubCidrC
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-C'
-  NatGwC:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      ConnectivityType: public
-      SubnetId: !Ref EgressPubSubnetC
-      AllocationId: !If [ CreateEipC, !GetAtt NatEipC.AllocationId, !Ref EipC ]
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-C'
-
-  NatEipC:
-    Type: AWS::EC2::EIP
-    Condition: CreateEipC
-    Properties:
-      Domain: vpc
-
-  InspectionTGWRouteTableC:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref InspectionVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-C'
-
-  InspectionTGWSubnetRoutingC:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref InspectionTGWRouteTableC
-      SubnetId: !Ref InspectionTGWSubnetC
-
-  InspectionFWRouteTableC:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref InspectionVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table-C'
-
-  InspectionFWSubnetRoutingC:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref InspectionFWRouteTableC
-      SubnetId: !Ref InspectionFWSubnetC
-
-  EgressTGWRouteTableC:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref EgressVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-C'
-
-  EgressTGWSubnetRoutingC:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref EgressTGWRouteTableC
-      SubnetId: !Ref EgressTGWSubnetC
-
-  EgressTGWDefaultRouteC:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref EgressTGWRouteTableC
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwC
-
-  EgressPubSubnetRoutingC:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressTGWSubnetC
-      
-
+          Value: !Sub '${AWS::StackName} Inspection VPC' 
 
   InetGW:
     Type: AWS::EC2::InternetGateway
@@ -530,108 +219,540 @@ Resources:
 
   PubDefaultRoute:
     Type: AWS::EC2::Route
-    DependsOn: InetGW
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref InetGW
 
-  TransitGateway:
-    Type: AWS::EC2::TransitGateway
-    Properties: 
-      AmazonSideAsn: 65000
-      AutoAcceptSharedAttachments: enable
-      DefaultRouteTableAssociation: enable
-      DefaultRouteTablePropagation: enable
-      Description: !Sub '${AWS::StackName} TGW for central network firewall and egress'
-      DnsSupport: enable
-      MulticastSupport: disable
-      Tags: 
-        - Key: Name
-          Value: !Ref 'AWS::StackId'
-      VpnEcmpSupport: enable
-
-  TGWInspectionRouteTable:
-    Type: AWS::EC2::TransitGatewayRouteTable
+  PubTGWRoute1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
     Properties:
-      TransitGatewayId: !Ref TransitGateway
-      Tags: 
-        - Key: Name
-          Value: !Sub '${AWS::StackName} inspection route table'
-
-  TGWInspectionRoute:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties: 
-      Blackhole: false
-      DestinationCidrBlock: '0.0.0.0/0'
-      TransitGatewayAttachmentId: !Ref TGWInspectionAttachment
-      TransitGatewayRouteTableId: !Ref TGWInspectionRouteTable
-
-  TGWInspectionAttachment:
-    Type: AWS::EC2::TransitGatewayAttachment
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      TransitGatewayId: !Ref EgressTgwAttachment
+  PubTGWRoute2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
     Properties:
-      TransitGatewayId: !Ref TransitGateway
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      TransitGatewayId: !Ref EgressTgwAttachment
+  PubTGWRoute3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      TransitGatewayId: !Ref EgressTgwAttachment
+
+  FwRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
       VpcId: !Ref InspectionVPC
-      SubnetIds:
-        - !Ref InspectionTGWSubnetA
-        - !Ref InspectionTGWSubnetB
-        - !Ref InspectionTGWSubnetC
-      Tags: 
+      Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} inspection VPC attachment'
+          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table'
 
-  TGWInspectionVPCRouteAssociation:
-    Type: AWS::EC2::TransitGatewayRouteTableAssociation
+  FwDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: HasInspectionTgwAttachment
     Properties:
-      TransitGatewayAttachmentId: !Ref TGWInspectionAttachment
-      TransitGatewayRouteTableId: !Ref TGWFirewallRouteTable
-
-  TGWFirewallRouteTable:
-    Type: AWS::EC2::TransitGatewayRouteTable
-    Properties:
-      TransitGatewayId: !Ref TransitGateway
-      Tags: 
-        - Key: Name
-          Value: !Sub '${AWS::StackName} firewall route table'
-
-  TGWFirewallRoute:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties: 
-      Blackhole: false
+      RouteTableId: !Ref FwRouteTable
       DestinationCidrBlock: '0.0.0.0/0'
-      TransitGatewayAttachmentId: !Ref TGWEgressAttachment
-      TransitGatewayRouteTableId: !Ref TGWFirewallRouteTable
-
-  TGWEgressAttachment:
-    Type: AWS::EC2::TransitGatewayAttachment
+      TransitGatewayId: !Ref InspectionTgwAttachment
+  NetworkFWa:
+    Type: AWS::NetworkFirewall::Firewall
     Properties:
-      TransitGatewayId: !Ref TransitGateway
-      VpcId: !Ref EgressVPC
-      SubnetIds:
-        - !Ref EgressTGWSubnetA
-        - !Ref EgressTGWSubnetB
-        - !Ref EgressTGWSubnetC
-      Tags: 
+      FirewallName: !Sub '${AWS::StackName}-a'
+      FirewallPolicyArn: !Ref DefaultFirewallPolicy
+      VpcId: !Ref InspectionVPC
+      SubnetMappings:
+        - SubnetId: !Ref InspectionFWSubneta
+      Description: Network firewall to inspect outbound traffic to internet
+      Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} egress VPC attachment'
-
-  TGWEgressVPCRouteAssociation:
-    Type: AWS::EC2::TransitGatewayRouteTableAssociation
+          Value: !Sub '${AWS::StackName} network firewall AZ-a'
+  NetworkFWb:
+    Type: AWS::NetworkFirewall::Firewall
     Properties:
-      TransitGatewayAttachmentId: !Ref TGWEgressAttachment
-      TransitGatewayRouteTableId: !Ref TGWInspectionRouteTable
+      FirewallName: !Sub '${AWS::StackName}-b'
+      FirewallPolicyArn: !Ref DefaultFirewallPolicy
+      VpcId: !Ref InspectionVPC
+      SubnetMappings:
+        - SubnetId: !Ref InspectionFWSubnetb
+      Description: Network firewall to inspect outbound traffic to internet
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} network firewall AZ-b'
+  NetworkFWc:
+    Type: AWS::NetworkFirewall::Firewall
+    Properties:
+      FirewallName: !Sub '${AWS::StackName}-c'
+      FirewallPolicyArn: !Ref DefaultFirewallPolicy
+      VpcId: !Ref InspectionVPC
+      SubnetMappings:
+        - SubnetId: !Ref InspectionFWSubnetc
+      Description: Network firewall to inspect outbound traffic to internet
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} network firewall AZ-c'
 
+  DefaultFirewallPolicy:
+    Type: 'AWS::NetworkFirewall::FirewallPolicy'
+    Properties:
+      FirewallPolicyName: !Sub "${AWS::StackName}-default-policy"
+      FirewallPolicy:
+        StatelessDefaultActions:
+          - 'aws:pass'
+        StatelessFragmentDefaultActions:
+          - 'aws:pass'
+      Description: Default firewall policy passing everything
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} default policy'
+
+#  SampleStatefulRulegroup:
+#    Type: 'AWS::NetworkFirewall::RuleGroup'
+#    Properties:
+#      RuleGroupName: SampleStatefulRulegroupName
+#      Type: STATEFUL
+#      RuleGroup:
+#        RulesSource:
+#          RulesString: >-
+#            pass tcp 10.20.20.0/24 45400:45500 <> 10.10.10.0/24 5203
+#            (msg:"test";sid:1;rev:1;)
+#      Capacity: 100
+#      Description: Rulegroup description goes here
+#      Tags:
+#        - Key: Foo
+#          Value: Bar
+
+  InspectionTGWRoutea:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTablea
+      DestinationCidrBlock: '0.0.0.0/0'
+      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 0, !GetAtt NetworkFWa.EndpointIds ] ] ]
+  InspectionTGWRouteb:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTableb
+      DestinationCidrBlock: '0.0.0.0/0'
+      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 0, !GetAtt NetworkFWb.EndpointIds ] ] ]
+  InspectionTGWRoutec:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTablec
+      DestinationCidrBlock: '0.0.0.0/0'
+      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 0, !GetAtt NetworkFWc.EndpointIds ] ] ]
+  EgressTGWSubneta:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref EgressTGWCidra
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-a'
+
+  EgressPubSubneta:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref EgressPubCidra
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-a'
+
+  InspectionTGWSubneta:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref InspectionTGWCidra
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-a'
+
+  InspectionFWSubneta:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Ref InspectionFWCidra
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-a'
+  NatGwa:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubneta
+      AllocationId: !If [ CreateEipa, !GetAtt NatEipa.AllocationId, !Ref Eipa ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-a'
+
+  NatEipa:
+    Type: AWS::EC2::EIP
+#    DeletionPolicy: Retain
+#    UpdateReplacePolicy: Retain
+    Condition: CreateEipa
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-a'
+
+  EgressTGWRouteTablea:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-a'
+
+  EgressTGWSubnetRoutinga:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablea
+      SubnetId: !Ref EgressTGWSubneta
+
+  EgressTGWDefaultRoutea:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablea
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwa
+
+  EgressPubSubnetRoutinga:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref EgressPubSubneta
+
+  InspectionTGWRouteTablea:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-a'
+
+  InspectionTGWSubnetRoutinga:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTablea
+      SubnetId: !Ref InspectionTGWSubneta
+
+  InspectionTGWSFWRoutinga:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref FwRouteTable
+      SubnetId: !Ref InspectionFWSubneta
+
+  EgressTGWRoutea1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablea
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      TransitGatewayId: !Ref EgressTgwAttachment
+  EgressTGWRoutea2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablea
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      TransitGatewayId: !Ref EgressTgwAttachment
+  EgressTGWRoutea3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablea
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      TransitGatewayId: !Ref EgressTgwAttachment
+  EgressTGWSubnetb:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref EgressTGWCidrb
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-b'
+
+  EgressPubSubnetb:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref EgressPubCidrb
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-b'
+
+  InspectionTGWSubnetb:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref InspectionTGWCidrb
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-b'
+
+  InspectionFWSubnetb:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Ref InspectionFWCidrb
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-b'
+  NatGwb:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubnetb
+      AllocationId: !If [ CreateEipb, !GetAtt NatEipb.AllocationId, !Ref Eipb ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-b'
+
+  NatEipb:
+    Type: AWS::EC2::EIP
+#    DeletionPolicy: Retain
+#    UpdateReplacePolicy: Retain
+    Condition: CreateEipb
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-b'
+
+  EgressTGWRouteTableb:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-b'
+
+  EgressTGWSubnetRoutingb:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableb
+      SubnetId: !Ref EgressTGWSubnetb
+
+  EgressTGWDefaultRouteb:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableb
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwb
+
+  EgressPubSubnetRoutingb:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref EgressPubSubnetb
+
+  InspectionTGWRouteTableb:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-b'
+
+  InspectionTGWSubnetRoutingb:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTableb
+      SubnetId: !Ref InspectionTGWSubnetb
+
+  InspectionTGWSFWRoutingb:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref FwRouteTable
+      SubnetId: !Ref InspectionFWSubnetb
+
+  EgressTGWRouteb1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableb
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      TransitGatewayId: !Ref EgressTgwAttachment
+  EgressTGWRouteb2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableb
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      TransitGatewayId: !Ref EgressTgwAttachment
+  EgressTGWRouteb3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTableb
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      TransitGatewayId: !Ref EgressTgwAttachment
+  EgressTGWSubnetc:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref EgressTGWCidrc
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-c'
+
+  EgressPubSubnetc:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EgressVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref EgressPubCidrc
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-c'
+
+  InspectionTGWSubnetc:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref InspectionTGWCidrc
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-c'
+
+  InspectionFWSubnetc:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Ref InspectionFWCidrc
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-c'
+  NatGwc:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref EgressPubSubnetc
+      AllocationId: !If [ CreateEipc, !GetAtt NatEipc.AllocationId, !Ref Eipc ]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-c'
+
+  NatEipc:
+    Type: AWS::EC2::EIP
+#    DeletionPolicy: Retain
+#    UpdateReplacePolicy: Retain
+    Condition: CreateEipc
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC NAT-c'
+
+  EgressTGWRouteTablec:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EgressVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-c'
+
+  EgressTGWSubnetRoutingc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablec
+      SubnetId: !Ref EgressTGWSubnetc
+
+  EgressTGWDefaultRoutec:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablec
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGwc
+
+  EgressPubSubnetRoutingc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      SubnetId: !Ref EgressPubSubnetc
+
+  InspectionTGWRouteTablec:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref InspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-c'
+
+  InspectionTGWSubnetRoutingc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTablec
+      SubnetId: !Ref InspectionTGWSubnetc
+
+  InspectionTGWSFWRoutingc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref FwRouteTable
+      SubnetId: !Ref InspectionFWSubnetc
+
+  EgressTGWRoutec1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablec
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      TransitGatewayId: !Ref EgressTgwAttachment
+  EgressTGWRoutec2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablec
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      TransitGatewayId: !Ref EgressTgwAttachment
+  EgressTGWRoutec3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTablec
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      TransitGatewayId: !Ref EgressTgwAttachment
 
 Outputs:
-
-  InspectionVpcId:
-    Description: VPC ID
-    Value: !Ref InspectionVPC
-    Export:
-      Name: !Sub '${AWS::StackName}-InspectionVpcId'
 
   EgressVpcId:
     Description: VPC ID
     Value: !Ref EgressVPC
     Export:
       Name: !Sub '${AWS::StackName}-EgressVpcId'
+
+  InspectionVpcId:
+    Description: VPC ID
+    Value: !Ref InspectionVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-InspectionVpcId'

@@ -36,7 +36,7 @@
       VpcId: !Ref InspectionVPC
       SubnetIds:
 {%- for x in AZ %}
-        - !Ref InspectionTGWSubnet{{x.az|upper}}
+        - !Ref InspectionTGWSubnet{{x.az|lower}}
 {%- endfor %}
       Tags: 
         - Key: Name
@@ -71,7 +71,7 @@
       VpcId: !Ref EgressVPC
       SubnetIds:
 {%- for x in AZ %}
-        - !Ref EgressTGWSubnet{{x.az|upper}}
+        - !Ref EgressTGWSubnet{{x.az|lower}}
 {%- endfor %}
       Tags: 
         - Key: Name

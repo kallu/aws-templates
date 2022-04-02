@@ -11,10 +11,10 @@
    % jinja2 vpc.yaml.j2 config.json > vpc.yaml
 #}
 
-{# Comma separated list of strings with letter X replaced by AZ identifier in caps #}
+{# Comma separated list of strings with letter X replaced by AZ identifier in lower-case #}
 {% macro ForAllAZs(az,format) -%}
 {% for x in az -%}
-{{ format|replace('X', x.az.upper()) }}{{ ", " if not loop.last else "" }}
+{{ format|replace('X', x.az.lower()) }}{{ ", " if not loop.last else "" }}
 {%- endfor %}
 {%- endmacro %}
 
@@ -27,37 +27,38 @@ Metadata:
     ParameterGroups:
       -
         Label:
-          default: Inspection VPC
+          default: Egress VPC
         Parameters:
           - InspectionVpcCidr
 {%- for x in AZ %}
-          - InspectionTGWCidr{{x.az|upper}}
+          - InspectionTGWCidr{{x.az|lower}}
 {%- endfor %}
 {%- for x in AZ %}
-          - InspectionFWCidr{{x.az|upper}}
+          - InspectionFWCidr{{x.az|lower}}
 {%- endfor %}
       -
         Label:
-          default: Central Egress VPC
+          default: Egress VPC
         Parameters:
           - EgressVpcCidr
 {%- for x in AZ %}
-          - EgressTGWCidr{{x.az|upper}}
+          - EgressTGWCidr{{x.az|lower}}
 {%- endfor %}
 {%- for x in AZ %}
-          - EgressPubCidr{{x.az|upper}}
+          - EgressPubCidr{{x.az|lower}}
 {%- endfor %}
 {%- for x in AZ %}
-          - Eip{{x.az|upper}}
+          - Eip{{x.az|lower}}
+{%- endfor %}
+      -
+        Label:
+          default: Routing to TGW
+        Parameters:
+{%- for x in [1,2,3] %}
+          - TgwRouteCidr{{x}}
 {%- endfor %}
 
 Parameters:
-
-  InspectionVpcCidr:
-    Type: String
-    Description: Inspection VPC CIDR
-    Default: '{{VPC.inspection}}'
-    AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
 
   EgressVpcCidr:
     Type: String
@@ -65,50 +66,69 @@ Parameters:
     Default: '{{VPC.egress}}'
     AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
 
+  InspectionVpcCidr:
+    Type: String
+    Description: Inspection VPC CIDR
+    Default: '{{VPC.inspection}}'
+    AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
+
 {% for x in AZ %}
-  InspectionTGWCidr{{x.az|upper}}:
+  EgressTGWCidr{{x.az|lower}}:
     Type: String
-    Description: Inspection VPC TGW Subnet {{x.az|upper}}
-    Default: '{{x.inspection_tgw}}'
-    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
-  InspectionFWCidr{{x.az|upper}}:
-    Type: String
-    Description: Inspection VPC FW Subnet {{x.az|upper}}
-    Default: '{{x.inspection_fw}}'
-    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
-  EgressTGWCidr{{x.az|upper}}:
-    Type: String
-    Description: Egress VPC TGW Subnet {{x.az|upper}}
+    Description: Egress VPC TGW Subnet {{x.az|lower}}
     Default: '{{x.egress_tgw}}'
     AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
-  EgressPubCidr{{x.az|upper}}:
+  InspectionTGWCidr{{x.az|lower}}:
     Type: String
-    Description: Egress VPC Public Subnet {{x.az|upper}}
+    Description: Inspection VPC TGW Subnet {{x.az|lower}}
+    Default: '{{x.inspection_tgw}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+  EgressPubCidr{{x.az|lower}}:
+    Type: String
+    Description: Egress VPC Public Subnet {{x.az|lower}}
     Default: '{{x.egress_pub}}'
     AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
-  Eip{{x.az|upper}}:
+  InspectionFWCidr{{x.az|lower}}:
     Type: String
-    Description: Pre-allocated EIP ID for AZ-{{x.az|upper}} (optional)
+    Description: Inspection VPC FW Subnet {{x.az|lower}}
+    Default: '{{x.inspection_fw}}'
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+  Eip{{x.az|lower}}:
+    Type: String
+    Description: Pre-allocated EIP ID for AZ-{{x.az|lower}} (optional)
     Default: ''
 {% endfor %}
 
+  EgressTgwAttachment:
+    Type: String
+    Description: TGW attached to egress VPC (optional)
+    Default: ''
+
+  InspectionTgwAttachment:
+    Type: String
+    Description: TGW attache to inspection VPC (optional)
+    Default: ''
+
+{%- for x in [1,2,3] %}
+  TgwRouteCidr{{x}}:
+    Type: String
+    Description: CIDR to be routed from Egress to TGW (optional)
+    Default: ''
+    AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
+{%- endfor %}
+
 Conditions:
-{% for x in AZ %}
-  CreateEip{{x.az|upper}}: !Equals [!Ref Eip{{x.az|upper}}, "" ]
-{% endfor %}
-
+{%- for x in AZ %}
+  CreateEip{{x.az|lower}}: !Equals [!Ref Eip{{x.az|lower}}, "" ]
+{%- endfor %}
+  HasEgressTgwAttachment: !Not [ !Equals [!Ref EgressTgwAttachment, "" ] ]
+  HasInspectionTgwAttachment: !Not [ !Equals [!Ref InspectionTgwAttachment, "" ] ]
+{%- for n in [1,2,3] %}
+  HasTgwRouteCidr{{n}}: !Not [ !Equals [!Ref TgwRouteCidr{{n}}, "" ] ]
+  AddTgwRoute{{n}}: !And [ Condition: HasEgressTgwAttachment, Condition: HasTgwRouteCidr{{n}} ]
+{%- endfor %}
+  
 Resources:
-
-  InspectionVPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: !Ref InspectionVpcCidr
-      EnableDnsSupport: true
-      EnableDnsHostnames: true
-      InstanceTenancy: default
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC'
 
   EgressVPC:
     Type: AWS::EC2::VPC
@@ -119,27 +139,66 @@ Resources:
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC' 
+          Value: !Sub '${AWS::StackName} Egress VPC'
 
-{% for x in AZ %}
+  InspectionVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref InspectionVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Inspection VPC' 
+
+{% include 'internetaccess.yaml.j2' %}
+{%- for n in [1,2,3] %}
+  PubTGWRoute{{n}}:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute{{n}}
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: !Ref TgwRouteCidr{{n}}
+      TransitGatewayId: !Ref EgressTgwAttachment
+{%- endfor %}
+
+{% include 'networkfw.yaml.j2' %}
+
+{%- for x in AZ %}
+  InspectionTGWRoute{{x.az|lower}}:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref InspectionTGWRouteTable{{x.az|lower}}
+      DestinationCidrBlock: '0.0.0.0/0'
+      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 0, !GetAtt NetworkFW{{x.az|lower}}.EndpointIds ] ] ]
+{%- endfor %}
+
+{%- for x in AZ %}
 {% include 'subnets.yaml.j2' %}
 {% include 'nat.yaml.j2' %}
 {% include 'routes.yaml.j2' %}
-{% endfor %}
-
-{% include 'internetaccess.yaml.j2' %}
-{% include 'tgw.yaml.j2' %}
+{%- for n in [1,2,3] %}
+  EgressTGWRoute{{x.az|lower}}{{n}}:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute{{n}}
+    Properties:
+      RouteTableId: !Ref EgressTGWRouteTable{{x.az|lower}}
+      DestinationCidrBlock: !Ref TgwRouteCidr{{n}}
+      TransitGatewayId: !Ref EgressTgwAttachment
+{%- endfor %}
+{%- endfor %}
 
 Outputs:
-
-  InspectionVpcId:
-    Description: VPC ID
-    Value: !Ref InspectionVPC
-    Export:
-      Name: !Sub '${AWS::StackName}-InspectionVpcId'
 
   EgressVpcId:
     Description: VPC ID
     Value: !Ref EgressVPC
     Export:
       Name: !Sub '${AWS::StackName}-EgressVpcId'
+
+  InspectionVpcId:
+    Description: VPC ID
+    Value: !Ref InspectionVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-InspectionVpcId'
