@@ -1,25 +1,6 @@
 ## AWS Inspection and Egress VPCs template
 
-Below is the implementation of "3) North-South: Centralized internet egress" from AWS blog [Deployment models for AWS Network Firewall](https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/)
-
-### Generating templates
-
-`vpc.yaml.j2` is Jinja2 template that will generate Cloudformation YAML template with
-input from `config.json` in this same directory. To render `vpc.yaml` you need to
-
-* Install Jinja CLI
-
-```
-% pip install jinja-cli
-``` 
-
-* Render Cloudformation template
-
-``` 
-% jinja2 vpc.yaml.j2 config.json > vpc.yaml
-```
-
-Or you can just say `./build.sh` to generate the template and verify with [cfn-lint](https://github.com/aws-cloudformation/cfn-lint)
+Below is the implementation of *"3) North-South: Centralized internet egress"* from AWS blog [Deployment models for AWS Network Firewall](https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/)
 
 ### Template features
 * 2 VPCs; inspection and egress
