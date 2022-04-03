@@ -6,35 +6,19 @@
     "AZ": [
         {
             "az": "a",
-            "inspection_tgw": "10.0.0.0/28",
-            "inspection_fw":  "10.0.0.16/28",
-            "egress_tgw": "10.0.0.128/28",
-            "egress_pub": "10.0.0.144/28"
+            "index": 0
         },
         {
             "az": "b",
-            "inspection_tgw": "10.0.0.32/28",
-            "inspection_fw":  "10.0.0.48/28",
-            "egress_tgw": "10.0.0.160/28",
-            "egress_pub": "10.0.0.176/28"
+            "index": 1
         },
         {
             "az": "c",
-            "inspection_tgw": "10.0.0.64/28",
-            "inspection_fw":  "10.0.0.80/28",
-            "egress_tgw": "10.0.0.192/28",
-            "egress_pub": "10.0.0.208/28"
+            "index": 2
         }
     ],
     "Pattern": {
         "VPC_PRIMARY_CIDR": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\\\/(1[6-9]|2[0-8]))$",
         "VPC_SUBNET_CIDR": "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-    },
-    "InterfaceEndpoints": [
-        { "name": "SSM", "addr": "ssm" },
-        { "name": "EC2", "addr": "ec2" },
-        { "name": "SSMMSG", "addr": "ssmmessages" },
-        { "name": "EC2MSG", "addr": "ec2messages" },
-        { "name": "CFN", "addr": "cloudformation" }
-    ]
+    }
 }

@@ -1,46 +1,46 @@
-  EgressTGWRouteTable{{x.az|lower}}:
+  EgressTGWRouteTable{{x.az|upper}}:
     Type: AWS::EC2::RouteTable
     Properties: 
       VpcId: !Ref EgressVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-{{x.az|lower}}'
+          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-{{x.az|upper}}'
 
-  EgressTGWSubnetRouting{{x.az|lower}}:
+  EgressTGWSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTable{{x.az|lower}}
-      SubnetId: !Ref EgressTGWSubnet{{x.az|lower}}
+      RouteTableId: !Ref EgressTGWRouteTable{{x.az|upper}}
+      SubnetId: !Ref EgressTGWSubnet{{x.az|upper}}
 
-  EgressTGWDefaultRoute{{x.az|lower}}:
+  EgressTGWDefaultRoute{{x.az|upper}}:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTable{{x.az|lower}}
+      RouteTableId: !Ref EgressTGWRouteTable{{x.az|upper}}
       DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGw{{x.az|lower}}
+      NatGatewayId: !Ref NatGw{{x.az|upper}}
 
-  EgressPubSubnetRouting{{x.az|lower}}:
+  EgressPubSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressPubSubnet{{x.az|lower}}
+      SubnetId: !Ref EgressPubSubnet{{x.az|upper}}
 
-  InspectionTGWRouteTable{{x.az|lower}}:
+  InspectionTGWRouteTable{{x.az|upper}}:
     Type: AWS::EC2::RouteTable
     Properties: 
       VpcId: !Ref InspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-{{x.az|lower}}'
+          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-{{x.az|upper}}'
 
-  InspectionTGWSubnetRouting{{x.az|lower}}:
+  InspectionTGWSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref InspectionTGWRouteTable{{x.az|lower}}
-      SubnetId: !Ref InspectionTGWSubnet{{x.az|lower}}
+      RouteTableId: !Ref InspectionTGWRouteTable{{x.az|upper}}
+      SubnetId: !Ref InspectionTGWSubnet{{x.az|upper}}
 
-  InspectionTGWSFWRouting{{x.az|lower}}:
+  InspectionTGWSFWRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref FwRouteTable
-      SubnetId: !Ref InspectionFWSubnet{{x.az|lower}}
+      SubnetId: !Ref InspectionFWSubnet{{x.az|upper}}

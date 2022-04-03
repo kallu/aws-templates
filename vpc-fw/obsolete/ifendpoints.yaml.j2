@@ -32,8 +32,8 @@
       SubnetIds:
       {%- for y in AZ %}
       - !If
-        - Priv{{y.az.lower()}}
-        - !Ref PrivSubnet{{y.az.lower()}}
+        - Priv{{y.az.upper()}}
+        - !Ref PrivSubnet{{y.az.upper()}}
         - !Ref AWS::NoValue
       {%- endfor %}
 {% endfor %}
