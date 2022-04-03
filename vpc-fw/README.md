@@ -80,20 +80,24 @@ as routing is not enabled until `TgwAttachment` is provided.
 Deployment is 2 step process. First you must create the stack WITHOUT providing `TgwAttachment` value.
 This will create most of the infrastructure but subnet routing is not functional at this point.
 
-Next step is manually correct Inspection TGW Subnet's routing. When routing from Inspection TGW subnets
+Now you should correct Inspection TGW Subnet's routing. When routing from Inspection TGW subnets
 to Network Firewall endpoints is configured, it isn't possible match subnets and endpoints so that
 traffic would stay within the same AZ.
 
 From [AWS::NetworkFirewall::Firewall](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-networkfirewall-firewall.html)
 > GetAtt.EndpointIds
->    The unique IDs of the firewall endpoints for all of the subnets that you attached to the firewall. The subnets are not listed in any particular order. For example: ["us-west-2c:vpce-111122223333", "us-west-2a:vpce-987654321098", "us-west-2b:vpce-012345678901"].
+>
+> The unique IDs of the firewall endpoints for all of the subnets that you attached to the firewall. The subnets are not listed in any particular order. For example: ["us-west-2c:vpce-111122223333", "us-west-2a:vpce-987654321098", "us-west-2b:vpce-012345678901"].
 
-Configuration will work even if you don't fix this, but it will likely cause extra charges due to
-cross-AZ traffic and lower your availability because loss of either AZs will break the traffic flow.
+![Fix routing from TGW to Firewall endpoint](refdocs/fix-routing.png)
+
+Configuration will work even if you don't fix this, but it will cause extra charges due to
+cross-AZ traffic and lower your availability because loss of either TGW attachment or Firewall endpoint AZ
+will break the traffic flow.
 
 Next step is manually add Transit Gateway attachments for all AZs in both Inspection and Egress VPCs.
 Attachments are not part of Cloudformation template because the bug in `AWS::EC2::TransitGatewayAttachment`
-resource triggers replacement on any update, e.g. tag changes. Combining this with Cloudformation logic
+resource triggers replacement on any update, including tag changes. Combining this with Cloudformation logic
 of first creating the new resource before removing the old and there can be only single attachment per
 VPC for TGW, makes it impossible to do any changes to attachment after initial deployment :-(
 
