@@ -1,5 +1,9 @@
 ## AWS Inspection and Egress VPCs template
 
+Below is the implementation of "3) North-South: Centralized internet egress" from AWS blog [https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/][Deployment models for AWS Network Firewall]
+
+### Generating templates
+
 `vpc.yaml.j2` is Jinja2 template that will generate Cloudformation YAML template with
 input from `config.json` in this same directory. To render `vpc.yaml` you need to
 
@@ -14,6 +18,8 @@ input from `config.json` in this same directory. To render `vpc.yaml` you need t
 ``` 
 % jinja2 vpc.yaml.j2 config.json > vpc.yaml
 ```
+
+Or you can just say `./build.sh` to generate the template and verify with [https://github.com/aws-cloudformation/cfn-lint][cfn-lint]
 
 ### Template features
 * 2 VPCs; inspection and egress
@@ -78,7 +84,7 @@ Next step is manually correct Inspection TGW Subnet's routing. When routing from
 to Network Firewall endpoints is configured, it isn't possible match subnets and endpoints so that
 traffic would stay within the same AZ.
 
-From [AWS::NetworkFirewall::Firewall][https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-networkfirewall-firewall.html]
+From [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-networkfirewall-firewall.html][AWS::NetworkFirewall::Firewall]
 > GetAtt.EndpointIds
 >    The unique IDs of the firewall endpoints for all of the subnets that you attached to the firewall. The subnets are not listed in any particular order. For example: ["us-west-2c:vpce-111122223333", "us-west-2a:vpce-987654321098", "us-west-2b:vpce-012345678901"].
 
@@ -132,7 +138,4 @@ Routing change will not cause any significant lost of internet access but it wil
 64 bytes from 8.8.8.8: icmp_seq=327 ttl=53 time=1.22 ms
 ```
 
-### References
-
-Above is the implementation of "3) North-South: Centralized internet egress" from AWS blog [Deployment models for AWS Network Firewall][https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/]
 
