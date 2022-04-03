@@ -1,6 +1,6 @@
 ## AWS Inspection and Egress VPCs template
 
-Below is the implementation of *"3) North-South: Centralized internet egress"* from AWS blog [Deployment models for AWS Network Firewall](https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/)
+Below is the implementation of **"3) North-South: Centralized internet egress"** from AWS blog [Deployment models for AWS Network Firewall](https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/)
 
 ### Template features
 * 2 VPCs; inspection and egress
