@@ -1,6 +1,6 @@
 ## AWS Inspection and Egress VPCs template
 
-Below is the implementation of "3) North-South: Centralized internet egress" from AWS blog [https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/][Deployment models for AWS Network Firewall]
+Below is the implementation of "3) North-South: Centralized internet egress" from AWS blog [Deployment models for AWS Network Firewall](https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/)
 
 ### Generating templates
 
@@ -19,7 +19,7 @@ input from `config.json` in this same directory. To render `vpc.yaml` you need t
 % jinja2 vpc.yaml.j2 config.json > vpc.yaml
 ```
 
-Or you can just say `./build.sh` to generate the template and verify with [https://github.com/aws-cloudformation/cfn-lint][cfn-lint]
+Or you can just say `./build.sh` to generate the template and verify with [cfn-lint](https://github.com/aws-cloudformation/cfn-lint)
 
 ### Template features
 * 2 VPCs; inspection and egress
@@ -84,7 +84,7 @@ Next step is manually correct Inspection TGW Subnet's routing. When routing from
 to Network Firewall endpoints is configured, it isn't possible match subnets and endpoints so that
 traffic would stay within the same AZ.
 
-From [https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-networkfirewall-firewall.html][AWS::NetworkFirewall::Firewall]
+From [AWS::NetworkFirewall::Firewall](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-networkfirewall-firewall.html)
 > GetAtt.EndpointIds
 >    The unique IDs of the firewall endpoints for all of the subnets that you attached to the firewall. The subnets are not listed in any particular order. For example: ["us-west-2c:vpce-111122223333", "us-west-2a:vpce-987654321098", "us-west-2b:vpce-012345678901"].
 
@@ -104,7 +104,7 @@ tables. One (Spoke Inspection) which all client VPC are associated by default, a
 where all client VPC CIDRs are propagated to. You should associate Inspection VPC attacments with
 Spoke Inspection and Egress VPC with Firewall route table.
 
-![TGW route table config][refdocs/tgw-routetable-config.png]
+![TGW route table config](refdocs/tgw-routetable-config.png)
 
 Once Transit Gateway is attached to both VPCs in all 3 AZs, you must update the stack and provide
 Transit Gateway ID and (up to 3) CIDRs covering all networks connected to it. This will complete
@@ -117,12 +117,12 @@ This will enable outbound internet access through Network Firewall and Shared NA
 
 If your outbound internet access was going through local NAT gateway like this
 
-![VPC routing via NAT][refdocs/vpc-routing-natgw.png]
+![VPC routing via NAT](refdocs/vpc-routing-natgw.png)
 
 All you have to do is change that to Transit gateway. You may need to do this each AZ separately
 depending how many route tables you have.
 
-![VPC routing via TGW][refdocs/vpc-routing-tgw.png]
+![VPC routing via TGW](refdocs/vpc-routing-tgw.png)
 
 Routing change will not cause any significant lost of internet access but it will change the NAT Gateway IP address that shows to server as source address of your connection.
 
