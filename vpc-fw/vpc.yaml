@@ -183,13 +183,6 @@ Resources:
       DestinationCidrBlock: '0.0.0.0/0'
       TransitGatewayId: !Ref TgwAttachment
 
-
-# Option to deploy a single Network Firewall for all AZ.
-# The problem is, it is not possible to configure routing
-# so that traffic will stay within AZ automatically as
-# endpoints are available as random order list.
-# Routing should be manually corrected after stack is deployed.
-
   NetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
@@ -204,99 +197,24 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} network firewall'
-
-# This will configure routing when single Network Firewall is deployed.
-# NOTE: You should correct routing manually to use endpoint within the same AZ.
   InspectionTGWRouteA:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InspectionTGWRouteTableA
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 0, !GetAtt NetworkFW.EndpointIds ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ':', !Select [ 1 , !Split [ 'a:', !Join [ ':', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
   InspectionTGWRouteB:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InspectionTGWRouteTableB
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 1, !GetAtt NetworkFW.EndpointIds ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ':', !Select [ 1 , !Split [ 'b:', !Join [ ':', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
   InspectionTGWRouteC:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InspectionTGWRouteTableC
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 2, !GetAtt NetworkFW.EndpointIds ] ] ]
-
-# Option to deploy a seperate Network Firewall for each AZ
-# as work-a-round for the issue of resolving which endpoint
-# should be included in which route table to keep traffic
-# within the same region. Downside is there will be 3 firewalls
-# to manage instead of one.
-
-#
-#  NetworkFWA:
-#    Type: AWS::NetworkFirewall::Firewall
-#    Properties:
-#      FirewallName: !Sub '${AWS::StackName}-A'
-#      FirewallPolicyArn: !Ref DefaultFirewallPolicy
-#      VpcId: !Ref InspectionVPC
-#      SubnetMappings:
-#        - SubnetId: !Ref InspectionFWSubnetA
-#      Description: Network firewall to inspect outbound traffic to internet
-#      Tags:
-#        - Key: Name
-#          Value: !Sub '${AWS::StackName} network firewall AZ-A'
-#
-#  NetworkFWB:
-#    Type: AWS::NetworkFirewall::Firewall
-#    Properties:
-#      FirewallName: !Sub '${AWS::StackName}-B'
-#      FirewallPolicyArn: !Ref DefaultFirewallPolicy
-#      VpcId: !Ref InspectionVPC
-#      SubnetMappings:
-#        - SubnetId: !Ref InspectionFWSubnetB
-#      Description: Network firewall to inspect outbound traffic to internet
-#      Tags:
-#        - Key: Name
-#          Value: !Sub '${AWS::StackName} network firewall AZ-B'
-#
-#  NetworkFWC:
-#    Type: AWS::NetworkFirewall::Firewall
-#    Properties:
-#      FirewallName: !Sub '${AWS::StackName}-C'
-#      FirewallPolicyArn: !Ref DefaultFirewallPolicy
-#      VpcId: !Ref InspectionVPC
-#      SubnetMappings:
-#        - SubnetId: !Ref InspectionFWSubnetC
-#      Description: Network firewall to inspect outbound traffic to internet
-#      Tags:
-#        - Key: Name
-#          Value: !Sub '${AWS::StackName} network firewall AZ-C'
-#
-
-# This will configure correct routing when AZ specific Network Firewalls are deployed
-
-#
-#  InspectionTGWRouteA:
-#    Type: AWS::EC2::Route
-#    Properties:
-#      RouteTableId: !Ref InspectionTGWRouteTableA
-#      DestinationCidrBlock: '0.0.0.0/0'
-#      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 0, !GetAtt NetworkFWA.EndpointIds ] ] ]
-#
-#  InspectionTGWRouteB:
-#    Type: AWS::EC2::Route
-#    Properties:
-#      RouteTableId: !Ref InspectionTGWRouteTableB
-#      DestinationCidrBlock: '0.0.0.0/0'
-#      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 0, !GetAtt NetworkFWB.EndpointIds ] ] ]
-#
-#  InspectionTGWRouteC:
-#    Type: AWS::EC2::Route
-#    Properties:
-#      RouteTableId: !Ref InspectionTGWRouteTableC
-#      DestinationCidrBlock: '0.0.0.0/0'
-#      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 0, !GetAtt NetworkFWC.EndpointIds ] ] ]
-#
+      VpcEndpointId: !Select [ 0, !Split [ ':', !Select [ 1 , !Split [ 'c:', !Join [ ':', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
 
   DefaultFirewallPolicy:
     Type: 'AWS::NetworkFirewall::FirewallPolicy'

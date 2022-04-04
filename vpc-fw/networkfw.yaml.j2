@@ -14,13 +14,6 @@
       DestinationCidrBlock: '0.0.0.0/0'
       TransitGatewayId: !Ref TgwAttachment
 
-
-# Option to deploy a single Network Firewall for all AZ.
-# The problem is, it is not possible to configure routing
-# so that traffic will stay within AZ automatically as
-# endpoints are available as random order list.
-# Routing should be manually corrected after stack is deployed.
-
   NetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
@@ -36,49 +29,14 @@
         - Key: Name
           Value: !Sub '${AWS::StackName} network firewall'
 
-# This will configure routing when single Network Firewall is deployed.
-# NOTE: You should correct routing manually to use endpoint within the same AZ.
-
 {%- for x in AZ %}
   InspectionTGWRoute{{x.az|upper}}:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InspectionTGWRouteTable{{x.az|upper}}
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ {{ loop.index - 1 }}, !GetAtt NetworkFW.EndpointIds ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ':', !Select [ 1 , !Split [ '{{x.az|lower}}:', !Join [ ':', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
 {%- endfor %}
-
-# Option to deploy a seperate Network Firewall for each AZ
-# as work-a-round for the issue of resolving which endpoint
-# should be included in which route table to keep traffic
-# within the same region. Downside is there will be 3 firewalls
-# to manage instead of one.
-
-#{%- for x in AZ %}
-#  NetworkFW{{x.az|upper}}:
-#    Type: AWS::NetworkFirewall::Firewall
-#    Properties:
-#      FirewallName: !Sub '${AWS::StackName}-{{x.az|upper}}'
-#      FirewallPolicyArn: !Ref DefaultFirewallPolicy
-#      VpcId: !Ref InspectionVPC
-#      SubnetMappings:
-#        - SubnetId: !Ref InspectionFWSubnet{{x.az|upper}}
-#      Description: Network firewall to inspect outbound traffic to internet
-#      Tags:
-#        - Key: Name
-#          Value: !Sub '${AWS::StackName} network firewall AZ-{{x.az|upper}}'
-#{%- endfor %}
-
-# This will configure correct routing when AZ specific Network Firewalls are deployed
-
-#{%- for x in AZ %}
-#  InspectionTGWRoute{{x.az|upper}}:
-#    Type: AWS::EC2::Route
-#    Properties:
-#      RouteTableId: !Ref InspectionTGWRouteTable{{x.az|upper}}
-#      DestinationCidrBlock: '0.0.0.0/0'
-#      VpcEndpointId: !Select [ 1, !Split [ ':', !Select [ 0, !GetAtt NetworkFW{{x.az|upper}}.EndpointIds ] ] ]
-#{%- endfor %}
 
   DefaultFirewallPolicy:
     Type: 'AWS::NetworkFirewall::FirewallPolicy'
