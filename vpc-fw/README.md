@@ -67,12 +67,19 @@ resource triggers replacement on any update, including tag changes. Combining th
 of first creating the new resource before removing the old and there can be only single attachment per
 VPC for TGW, makes it impossible to do any changes to attachment after initial deployment :-(
 
+See 
+  * https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/1144 
+  * https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-transitgateway/issues/124 
+
 ![TGW attachment update error](refdocs/update-error.png)
 
 When attaching Inspection and Egress VPCs, please note that there must be 2 Transit Gateway routing
 tables. One (Spoke Inspection) which all client VPC are associated by default, and another (Firewall)
 where all client VPC CIDRs are propagated to. You should associate Inspection VPC attacments with
 Spoke Inspection and Egress VPC with Firewall route table.
+
+NOTE: It is not possible to create a sample TGW with Cloudformation because of a bug that prevents
+creating association and propagation default route tables for TGW in Cloudformation. See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-transitgateway/issues/125
 
 ![TGW route table config](refdocs/tgw-routetable-config.png)
 
