@@ -4,6 +4,10 @@
 
 VPC networking template
 
+## vpc-fw
+
+Shared egress and network firewall template
+
 ## vpc-old
 
 Obsolete / simple VPC network templates

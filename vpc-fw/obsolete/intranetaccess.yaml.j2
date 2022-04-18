@@ -1,0 +1,34 @@
+  TGWAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Condition: AttachTransitGateway
+    Properties: 
+      SubnetIds: 
+      {%- for x in AZ %}
+      - !If
+        - Intra{{x.az|lower}}
+        - !Ref IntraSubnet{{x.az|lower}}
+        - !Ref AWS::NoValue
+      {%- endfor %}
+      TransitGatewayId: !Ref TransitGwId
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  IntraRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: IntraAny
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} intranet route-table'
+
+  IntraDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: AttachTransitGateway
+    DependsOn: TGWAttachment
+    Properties:
+      RouteTableId: !Ref IntraRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      TransitGatewayId: !Ref TransitGwId
