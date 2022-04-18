@@ -30,6 +30,7 @@
           Value: !Sub '${AWS::StackName} network firewall'
 
 {%- for x in AZ %}
+  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
   InspectionTGWRoute{{x.az|upper}}:
     Type: AWS::EC2::Route
     Properties:
