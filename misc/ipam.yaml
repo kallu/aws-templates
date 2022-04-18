@@ -1,0 +1,39 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Nested IPAM pool
+Resources:
+
+  IPAM:
+    Type: AWS::EC2::IPAM
+    Properties: 
+      Description: Sample IPAM
+      OperatingRegions: 
+        - RegionName: !Ref AWS::Region
+
+  IPAMScope:
+    Type: AWS::EC2::IPAMScope
+    Properties: 
+      Description: Default private scope
+      IpamId: !Ref IPAM
+      IpamScopeType: private
+
+  ParentPool:
+    Type: AWS::EC2::IPAMPool
+    Properties: 
+      AddressFamily: ipv4
+      Description: Sample parent pool
+      IpamScopeId: !GetAtt IPAM.PrivateDefaultScopeId
+      Locale: !Ref AWS::Region
+      ProvisionedCidrs: 
+        - Cidr: 10.0.0.0/10
+
+  NestedPool:
+    Type: AWS::EC2::IPAMPool
+    Properties: 
+      AddressFamily: ipv4
+      Description: Sample nested pool
+      IpamScopeId: !GetAtt IPAM.PrivateDefaultScopeId
+      Locale: !Ref AWS::Region
+      ProvisionedCidrs: 
+        - Cidr: 10.1.0.0/16
+      SourceIpamPoolId: !Ref ParentPool
