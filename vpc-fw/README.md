@@ -18,15 +18,19 @@ Below is the implementation of **"3) North-South: Centralized internet egress"**
 
 #### Inspection VPC
 
-   * InspectionVpcCidr
+   * InspectionVpcCidr (default 100.64.0.0/25)
 
-/25 CIDR for inspection VPC. This is split to /28 subnets for each AZ for TGW attachments and Network Firewall.
+/25 CIDR for inspection VPC. This is split to /28 subnets for each AZ for TGW attachments and Network Firewall. Here you can use a static value of 100.64.0.0/25 for all deployments as this CIDR will not
+be in any of TGW route-tables, only the default route 0.0.0.0/0 will point to inspection VPC.
+It is also not routable CIDR in AWS so there is no risk that any of client VPCs connected to TGW would
+have overlap with it.
 
-#### Egress VPC
+#### Egress VPC 
 
-   * EgressVpcCidr
+   * EgressVpcCidr (default 10.0.0.0/25)
 
 /25 CIDR for egress VPC. This is split to /28 subnets for each AZ for TGW attachments and NAT gateways.
+Here you must ensure the CIDR doesn't overlap with any other networks reachable from TGW.
 
    * EipA (optional)
    * EipB (optional)
@@ -58,24 +62,10 @@ as routing is not enabled until `TgwAttachment` is provided.
 
 ### Deployment
 
-Deployment is 2 step process. First you must create the stack WITHOUT providing `TgwAttachment` value.
-This will create most of the infrastructure but subnet routing is not functional at this point.
-
-Next step is manually add Transit Gateway attachments for all AZs in both Inspection and Egress VPCs.
-Attachments are not part of Cloudformation template because the bug in `AWS::EC2::TransitGatewayAttachment`
-resource triggers replacement on any update, including tag changes. Combining this with Cloudformation logic
-of first creating the new resource before removing the old and there can be only single attachment per
-VPC for TGW, makes it impossible to do any changes to attachment after initial deployment :-(
-
-See 
-  * https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/1144 
-  * https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-transitgateway/issues/124 
-
-![TGW attachment update error](refdocs/update-error.png)
-
-When attaching Inspection and Egress VPCs, please note that there must be 2 Transit Gateway routing
-tables. One (Spoke Inspection) which all client VPC are associated by default, and another (Firewall)
-where all client VPC CIDRs are propagated to. You should associate Inspection VPC attacments with
+Create stack and supply TGW ID and at least one CIDR routed from Egress VPC to Transit Gateway.
+While these are optional parameters, without them the VPCs build from the stack don't serve any purpose.
+Both Inspection and Egress VPC are attach to TGW default route table. You must manually modify TGW routing
+to have 2 route tables. One (Spoke Inspection) which all client VPC are associated by default, and another (Firewall) where all client VPC CIDRs are propagated to. You should associate Inspection VPC with
 Spoke Inspection and Egress VPC with Firewall route table.
 
 NOTE: It is not possible to create a sample TGW with Cloudformation because of a bug that prevents

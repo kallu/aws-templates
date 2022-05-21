@@ -9,6 +9,7 @@
   FwDefaultRoute:
     Type: AWS::EC2::Route
     Condition: HasTgwAttachment
+    DependsOn: InspectionTgwAttachment
     Properties:
       RouteTableId: !Ref FwRouteTable
       DestinationCidrBlock: '0.0.0.0/0'
@@ -36,7 +37,7 @@
     Properties:
       RouteTableId: !Ref InspectionTGWRouteTable{{x.az|upper}}
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ':', !Select [ 1 , !Split [ '{{x.az|lower}}:', !Join [ ':', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ '{{x.az|lower}}:', !Join [ ',', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
 {%- endfor %}
 
   DefaultFirewallPolicy:

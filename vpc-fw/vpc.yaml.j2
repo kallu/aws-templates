@@ -116,10 +116,13 @@ Resources:
           Value: !Sub '${AWS::StackName} Egress VPC'
 
 {% include 'internetaccess.yaml.j2' %}
+{% include 'tgwattachment.yaml.j2' %}
+
 {%- for n in [1,2,3] %}
   PubTGWRoute{{n}}:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute{{n}}
+    DependsOn: InspectionTgwAttachment
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: !Ref TgwRouteCidr{{n}}
@@ -136,6 +139,7 @@ Resources:
   EgressTGWRoute{{x.az|upper}}{{n}}:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute{{n}}
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTable{{x.az|upper}}
       DestinationCidrBlock: !Ref TgwRouteCidr{{n}}

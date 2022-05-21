@@ -37,7 +37,7 @@ Parameters:
   EgressVpcCidr:
     Type: String
     Description: Egress VPC CIDR
-    Default: '10.0.0.128/25'
+    Default: '10.0.0.0/25'
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
   EipA:
     Type: String
@@ -58,7 +58,7 @@ Parameters:
   InspectionVpcCidr:
     Type: String
     Description: Inspection VPC CIDR
-    Default: '10.0.0.0/25'
+    Default: '100.64.0.0/25'
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
 
   TgwAttachment:
@@ -145,9 +145,38 @@ Resources:
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref InetGW
 
+  InspectionTgwAttachment:
+    Type: AWS::EC2::TransitGatewayVpcAttachment
+    Condition: HasTgwAttachment
+    Properties:
+      VpcId: !Ref InspectionVPC
+      TransitGatewayId: !Ref TgwAttachment
+      Tags:
+        - Key: "Name"
+          Value: !Sub '${AWS::StackName} Inspection VPC'
+      SubnetIds:
+        - !Ref InspectionTGWSubnetA
+        - !Ref InspectionTGWSubnetB
+        - !Ref InspectionTGWSubnetC
+
+  EgressTgwAttachment:
+    Type: AWS::EC2::TransitGatewayVpcAttachment
+    Condition: HasTgwAttachment
+    Properties:
+      VpcId: !Ref EgressVPC
+      TransitGatewayId: !Ref TgwAttachment
+      Tags:
+        - Key: "Name"
+          Value: !Sub '${AWS::StackName} Egress VPC'
+      SubnetIds:
+        - !Ref EgressTGWSubnetA
+        - !Ref EgressTGWSubnetB
+        - !Ref EgressTGWSubnetC
+
   PubTGWRoute1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
+    DependsOn: InspectionTgwAttachment
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: !Ref TgwRouteCidr1
@@ -155,6 +184,7 @@ Resources:
   PubTGWRoute2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
+    DependsOn: InspectionTgwAttachment
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: !Ref TgwRouteCidr2
@@ -162,6 +192,7 @@ Resources:
   PubTGWRoute3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
+    DependsOn: InspectionTgwAttachment
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: !Ref TgwRouteCidr3
@@ -178,6 +209,7 @@ Resources:
   FwDefaultRoute:
     Type: AWS::EC2::Route
     Condition: HasTgwAttachment
+    DependsOn: InspectionTgwAttachment
     Properties:
       RouteTableId: !Ref FwRouteTable
       DestinationCidrBlock: '0.0.0.0/0'
@@ -197,24 +229,27 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName} network firewall'
+  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
   InspectionTGWRouteA:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InspectionTGWRouteTableA
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ':', !Select [ 1 , !Split [ 'a:', !Join [ ':', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
+  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
   InspectionTGWRouteB:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InspectionTGWRouteTableB
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ':', !Select [ 1 , !Split [ 'b:', !Join [ ':', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
+  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
   InspectionTGWRouteC:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InspectionTGWRouteTableC
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ':', !Select [ 1 , !Split [ 'c:', !Join [ ':', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
 
   DefaultFirewallPolicy:
     Type: 'AWS::NetworkFirewall::FirewallPolicy'
@@ -363,6 +398,7 @@ Resources:
   EgressTGWRouteA1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr1
@@ -370,6 +406,7 @@ Resources:
   EgressTGWRouteA2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr2
@@ -377,6 +414,7 @@ Resources:
   EgressTGWRouteA3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr3
@@ -495,6 +533,7 @@ Resources:
   EgressTGWRouteB1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr1
@@ -502,6 +541,7 @@ Resources:
   EgressTGWRouteB2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr2
@@ -509,6 +549,7 @@ Resources:
   EgressTGWRouteB3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr3
@@ -627,6 +668,7 @@ Resources:
   EgressTGWRouteC1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr1
@@ -634,6 +676,7 @@ Resources:
   EgressTGWRouteC2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr2
@@ -641,6 +684,7 @@ Resources:
   EgressTGWRouteC3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
+    DependsOn: EgressTgwAttachment
     Properties:
       RouteTableId: !Ref EgressTGWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr3
