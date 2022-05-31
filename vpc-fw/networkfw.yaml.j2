@@ -1,49 +1,49 @@
-  {{fw}}FwRouteTable:
+  {{name}}FwRouteTable:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref {{fw}}InspectionVPC
+      VpcId: !Ref {{name}}VPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} {{fw}} Inspection VPC FW route-table'
+          Value: !Sub '${AWS::StackName} {{name}} VPC FW route-table'
 
-  {{fw}}FwDefaultRoute:
+  {{name}}FwDefaultRoute:
     Type: AWS::EC2::Route
     Condition: HasTgwAttachment
-    DependsOn: {{fw}}InspectionTgwAttachment
+    DependsOn: {{name}}TgwAttachment
     Properties:
-      RouteTableId: !Ref {{fw}}FwRouteTable
+      RouteTableId: !Ref {{name}}FwRouteTable
       DestinationCidrBlock: '0.0.0.0/0'
       TransitGatewayId: !Ref TgwAttachment
 
-  {{fw}}NetworkFW:
+  {{name}}NetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
-      FirewallName: !Sub '{{fw}}-${AWS::StackName}'
-      FirewallPolicyArn: !Ref {{fw}}DefaultFirewallPolicy
-      VpcId: !Ref {{fw}}InspectionVPC
+      FirewallName: !Sub '{{name}}-${AWS::StackName}'
+      FirewallPolicyArn: !Ref {{name}}DefaultFirewallPolicy
+      VpcId: !Ref {{name}}VPC
       SubnetMappings:
 {%- for x in AZ %}
-        - SubnetId: !Ref {{fw}}InspectionFWSubnet{{x.az|upper}}
+        - SubnetId: !Ref {{name}}FWSubnet{{x.az|upper}}
 {%- endfor %}
-      Description: Network firewall to inspect traffic to on-prem networks
+      Description: {{name}} Network firewall
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} on-prem network firewall'
+          Value: !Sub '${AWS::StackName} {{name}} network firewall'
 
 {%- for x in AZ %}
   # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
-  {{fw}}InspectionTGWRoute{{x.az|upper}}:
+  {{name}}TGWRoute{{x.az|upper}}:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref {{fw}}InspectionTGWRouteTable{{x.az|upper}}
+      RouteTableId: !Ref {{name}}TGWRouteTable{{x.az|upper}}
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ '{{x.az|lower}}:', !Join [ ',', !GetAtt {{fw}}NetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ '{{x.az|lower}}:', !Join [ ',', !GetAtt {{name}}NetworkFW.EndpointIds ] ] ] ] ]
 {%- endfor %}
 
-  {{fw}}DefaultFirewallPolicy:
+  {{name}}DefaultFirewallPolicy:
     Type: 'AWS::NetworkFirewall::FirewallPolicy'
     Properties:
-      FirewallPolicyName: !Sub "${AWS::StackName}-default-{{fw}}-policy"
+      FirewallPolicyName: !Sub "${AWS::StackName}-default-{{name}}-policy"
       FirewallPolicy:
         StatelessDefaultActions:
           - 'aws:pass'
@@ -52,7 +52,7 @@
       Description: Default firewall policy passing everything
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} default on-prem policy'
+          Value: !Sub "${AWS::StackName} default {{name}} policy"
 
 # ADD DEFAULT POLICY AND RuleGroup
 # Should there be 1 NFW and then fix the cross AZ routing manually?

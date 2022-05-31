@@ -104,38 +104,18 @@ Conditions:
   
 Resources:
 
-  InternalInspectionVPC:
+{%- for name in VPC.names %}
+  {{name}}VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref InternalInspectionVpcCidr
+      CidrBlock: !Ref {{name}}VpcCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC'
-
-  ExternalInspectionVPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: !Ref ExternalInspectionVpcCidr
-      EnableDnsSupport: true
-      EnableDnsHostnames: true
-      InstanceTenancy: default
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} On-prem Inspection VPC'
-
-  EdgeVPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: !Ref EdgeVpcCidr
-      EnableDnsSupport: true
-      EnableDnsHostnames: true
-      InstanceTenancy: default
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC'
+          Value: !Sub '${AWS::StackName} {{name}} VPC'
+{%- endfor %}
 
 {% include 'internetaccess.yaml.j2' %}
 {% include 'tgwattachment.yaml.j2' %}
@@ -151,7 +131,7 @@ Resources:
       TransitGatewayId: !Ref TgwAttachment
 {%- endfor %}
 
-{%- for fw in ['Internal', 'External'] %}
+{%- for name in VPC.names %}
 {% include 'networkfw.yaml.j2' %}
 {%- endfor %}
 
@@ -173,20 +153,10 @@ Resources:
 
 Outputs:
 
-  EdgeVpcId:
+{%- for name in VPC.names %}
+  {{name}}VpcId:
     Description: VPC ID
-    Value: !Ref EdgeVPC
+    Value: !Ref {{name}}VPC
     Export:
-      Name: !Sub '${AWS::StackName}-EdgeVpcId'
-
-  InternalInspectionVpcId:
-    Description: VPC ID
-    Value: !Ref InternalInspectionVPC
-    Export:
-      Name: !Sub '${AWS::StackName}-InternalInspectionVpcId'
-
-  ExternalInspectionVpcId:
-    Description: VPC ID
-    Value: !Ref ExternalInspectionVPC
-    Export:
-      Name: !Sub '${AWS::StackName}-ExternalInspectionVpcId'
+      Name: !Sub '${AWS::StackName}-{{name}}VpcId'
+{%- endfor %}

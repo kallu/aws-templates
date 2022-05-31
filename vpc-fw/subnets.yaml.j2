@@ -9,6 +9,17 @@
         - Key: Name
           Value: !Sub '${AWS::StackName} Edge VPC TGW subnet-{{x.az|upper}}'
 
+  EdgeFWSubnet{{x.az|upper}}:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EdgeVPC
+      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
+      CidrBlock: !Select [ {{x.index + 4}} , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Edge VPC Firewall subnet-{{x.az|upper}}'
+
   EdgePubSubnet{{x.az|upper}}:
     Type: AWS::EC2::Subnet
     Properties:

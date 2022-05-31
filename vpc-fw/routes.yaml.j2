@@ -19,6 +19,20 @@
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGw{{x.az|upper}}
 
+  EdgeFWRouteTable{{x.az|upper}}:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EdgeVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Edge VPC Firewall route-table-{{x.az|upper}}'
+
+  EdgeFWSubnetRouting{{x.az|upper}}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref EdgeFWRouteTable{{x.az|upper}}
+      SubnetId: !Ref EdgeFWSubnet{{x.az|upper}}
+
   EdgePubSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -42,7 +56,7 @@
   InspectionTGWSFWRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref InternalFwRouteTable
+      RouteTableId: !Ref InternalInspectionFwRouteTable
       SubnetId: !Ref InternalInspectionFWSubnet{{x.az|upper}}
 
   ExternalInspectionTGWRouteTable{{x.az|upper}}:
@@ -62,5 +76,5 @@
   ExternalInspectionTGWSFWRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref ExternalFwRouteTable
+      RouteTableId: !Ref ExternalInspectionFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnet{{x.az|upper}}
