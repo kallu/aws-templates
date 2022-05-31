@@ -253,7 +253,7 @@ Resources:
   InternalNetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
-      FirewallName: !Sub 'Internal ${AWS::StackName}'
+      FirewallName: !Sub 'Internal-${AWS::StackName}'
       FirewallPolicyArn: !Ref InternalDefaultFirewallPolicy
       VpcId: !Ref InternalInspectionVPC
       SubnetMappings:
@@ -339,7 +339,7 @@ Resources:
   ExternalNetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
-      FirewallName: !Sub 'External ${AWS::StackName}'
+      FirewallName: !Sub 'External-${AWS::StackName}'
       FirewallPolicyArn: !Ref ExternalDefaultFirewallPolicy
       VpcId: !Ref ExternalInspectionVPC
       SubnetMappings:

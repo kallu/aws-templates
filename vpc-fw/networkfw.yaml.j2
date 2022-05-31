@@ -18,7 +18,7 @@
   {{fw}}NetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
-      FirewallName: !Sub '{{fw}} ${AWS::StackName}'
+      FirewallName: !Sub '{{fw}}-${AWS::StackName}'
       FirewallPolicyArn: !Ref {{fw}}DefaultFirewallPolicy
       VpcId: !Ref {{fw}}InspectionVPC
       SubnetMappings:
