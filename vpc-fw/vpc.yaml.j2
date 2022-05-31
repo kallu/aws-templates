@@ -27,9 +27,14 @@ Metadata:
     ParameterGroups:
       -
         Label:
-          default: Inspection VPC
+          default: Internal Inspection VPC
         Parameters:
-          - InspectionVpcCidr
+          - InternalInspectionVpcCidr
+      -
+        Label:
+          default: External Inspection VPC
+        Parameters:
+          - ExternalInspectionVpcCidr
       -
         Label:
           default: Egress VPC
@@ -62,15 +67,21 @@ Parameters:
     Default: ''
 {% endfor %}
 
-  InspectionVpcCidr:
+  InternalInspectionVpcCidr:
     Type: String
-    Description: Inspection VPC CIDR
-    Default: '{{VPC.inspection}}'
+    Description: Internal Inspection VPC CIDR
+    Default: '{{VPC.internalinspection}}'
+    AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
+
+  ExternalInspectionVpcCidr:
+    Type: String
+    Description: External Inspection VPC CIDR
+    Default: '{{VPC.externalinspection}}'
     AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
 
   TgwAttachment:
     Type: String
-    Description: TGW ID attached to both VPCs (optional)
+    Description: TGW ID attached to VPCs (optional)
     Default: ''
 
 {%- for x in [1,2,3] %}
@@ -93,16 +104,27 @@ Conditions:
   
 Resources:
 
-  InspectionVPC:
+  InternalInspectionVPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref InspectionVpcCidr
+      CidrBlock: !Ref InternalInspectionVpcCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC' 
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC'
+
+  ExternalInspectionVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref ExternalInspectionVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-prem Inspection VPC'
 
   EgressVPC:
     Type: AWS::EC2::VPC
@@ -122,14 +144,16 @@ Resources:
   PubTGWRoute{{n}}:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute{{n}}
-    DependsOn: InspectionTgwAttachment
+    DependsOn: InternalInspectionTgwAttachment
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: !Ref TgwRouteCidr{{n}}
       TransitGatewayId: !Ref TgwAttachment
 {%- endfor %}
 
+{%- for fw in ['Internal', 'External'] %}
 {% include 'networkfw.yaml.j2' %}
+{%- endfor %}
 
 {%- for x in AZ %}
 {% include 'subnets.yaml.j2' %}
@@ -155,8 +179,14 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-EgressVpcId'
 
-  InspectionVpcId:
+  InternalInspectionVpcId:
     Description: VPC ID
-    Value: !Ref InspectionVPC
+    Value: !Ref InternalInspectionVPC
     Export:
-      Name: !Sub '${AWS::StackName}-InspectionVpcId'
+      Name: !Sub '${AWS::StackName}-InternalInspectionVpcId'
+
+  ExternalInspectionVpcId:
+    Description: VPC ID
+    Value: !Ref ExternalInspectionVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-ExternalInspectionVpcId'

@@ -25,22 +25,42 @@
       RouteTableId: !Ref PubRouteTable
       SubnetId: !Ref EgressPubSubnet{{x.az|upper}}
 
-  InspectionTGWRouteTable{{x.az|upper}}:
+  InternalInspectionTGWRouteTable{{x.az|upper}}:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW route-table-{{x.az|upper}}'
 
   InspectionTGWSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref InspectionTGWRouteTable{{x.az|upper}}
-      SubnetId: !Ref InspectionTGWSubnet{{x.az|upper}}
+      RouteTableId: !Ref InternalInspectionTGWRouteTable{{x.az|upper}}
+      SubnetId: !Ref InternalInspectionTGWSubnet{{x.az|upper}}
 
   InspectionTGWSFWRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref FwRouteTable
-      SubnetId: !Ref InspectionFWSubnet{{x.az|upper}}
+      RouteTableId: !Ref InternalFwRouteTable
+      SubnetId: !Ref InternalInspectionFWSubnet{{x.az|upper}}
+
+  ExternalInspectionTGWRouteTable{{x.az|upper}}:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref ExternalInspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW route-table-{{x.az|upper}}'
+
+  ExternalInspectionTGWSubnetRouting{{x.az|upper}}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ExternalInspectionTGWRouteTable{{x.az|upper}}
+      SubnetId: !Ref ExternalInspectionTGWSubnet{{x.az|upper}}
+
+  ExternalInspectionTGWSFWRouting{{x.az|upper}}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ExternalFwRouteTable
+      SubnetId: !Ref ExternalInspectionFWSubnet{{x.az|upper}}

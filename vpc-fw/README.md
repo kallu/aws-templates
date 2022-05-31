@@ -1,29 +1,31 @@
 ## AWS Inspection and Egress VPCs template
 
-Below is the implementation of **"3) North-South: Centralized internet egress"** from AWS blog [Deployment models for AWS Network Firewall](https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/)
+Below is based on the implementation of **"3) North-South: Centralized internet egress"** from AWS blog [Deployment models for AWS Network Firewall](https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/)
 
 ### Template features
-* 2 VPCs; inspection and egress
-* 6 x /28 subnets for each AZ in both VPCs
+* 3 VPCs; internal + external inspection and egress
+* Subnets for each AZ in all VPCs
 * One layer of subnets to host TGW attachments
 * One layer of subnets to host Network Firewall or NAT Gateways.
 * Internet gataway attached to egress VPC
 * Public NAT gateway for each AZ in egress VPC
 * Option to use pre-allocated EIPs for Public NAT gateways
-* Network Firewall deployed across all AZs in inspection VPC
+* 2 Network Firewall deployed across all AZs in internal and external inspection VPCs
 
 ![Network diagram](diagram.png)
 
 ### Template parameters
 
-#### Inspection VPC
+#### Inspection VPCs
 
-   * InspectionVpcCidr (default 100.64.0.0/25)
+   * InternalInspectionVpcCidr (default 100.64.0.0/25)
+   * ExternalInspectionVpcCidr (default 100.64.128.0/25)
 
-/25 CIDR for inspection VPC. This is split to /28 subnets for each AZ for TGW attachments and Network Firewall. Here you can use a static value of 100.64.0.0/25 for all deployments as this CIDR will not
-be in any of TGW route-tables, only the default route 0.0.0.0/0 will point to inspection VPC.
+/25 CIDR for each inspection VPC. This is split to /28 subnets for each AZ for TGW attachments and Network Firewall.
+Here you can use a static values from 100.64.0.0 for all deployments as these CIDRs will not
+be in any of TGW route-tables, only the default route 0.0.0.0/0 will point to inspection VPCs.
 It is also not routable CIDR in AWS so there is no risk that any of client VPCs connected to TGW would
-have overlap with it.
+have overlap with these.
 
 #### Egress VPC 
 

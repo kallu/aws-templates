@@ -1,15 +1,29 @@
-  InspectionTgwAttachment:
+  InternalInspectionTgwAttachment:
     Type: AWS::EC2::TransitGatewayVpcAttachment
     Condition: HasTgwAttachment
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       TransitGatewayId: !Ref TgwAttachment
       Tags:
         - Key: "Name"
-          Value: !Sub '${AWS::StackName} Inspection VPC'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC'
       SubnetIds:
 {%- for x in AZ %}
-        - !Ref InspectionTGWSubnet{{x.az|upper}}
+        - !Ref InternalInspectionTGWSubnet{{x.az|upper}}
+{%- endfor %}
+
+  ExternalInspectionTgwAttachment:
+    Type: AWS::EC2::TransitGatewayVpcAttachment
+    Condition: HasTgwAttachment
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      TransitGatewayId: !Ref TgwAttachment
+      Tags:
+        - Key: "Name"
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC'
+      SubnetIds:
+{%- for x in AZ %}
+        - !Ref ExternalInspectionTGWSubnet{{x.az|upper}}
 {%- endfor %}
 
   EgressTgwAttachment:

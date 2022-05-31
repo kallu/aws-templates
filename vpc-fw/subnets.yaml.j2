@@ -20,24 +20,46 @@
         - Key: Name
           Value: !Sub '${AWS::StackName} Egress VPC Public subnet-{{x.az|upper}}'
 
-  InspectionTGWSubnet{{x.az|upper}}:
+  InternalInspectionTGWSubnet{{x.az|upper}}:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
-      CidrBlock: !Select [ {{x.index}} , !Cidr [ !Ref InspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ {{x.index}} , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW subnet-{{x.az|upper}}'
 
-  InspectionFWSubnet{{x.az|upper}}:
+  InternalInspectionFWSubnet{{x.az|upper}}:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
-      CidrBlock: !Select [ {{x.index + 4}} , !Cidr [ !Ref InspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ {{x.index + 4}} , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC FW subnet-{{x.az|upper}}'
+
+  ExternalInspectionTGWSubnet{{x.az|upper}}:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
+      CidrBlock: !Select [ {{x.index}} , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW subnet-{{x.az|upper}}'
+
+  ExternalInspectionFWSubnet{{x.az|upper}}:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
+      CidrBlock: !Select [ {{x.index + 4}} , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC FW subnet-{{x.az|upper}}'

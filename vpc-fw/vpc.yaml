@@ -12,9 +12,14 @@ Metadata:
     ParameterGroups:
       -
         Label:
-          default: Inspection VPC
+          default: Internal Inspection VPC
         Parameters:
-          - InspectionVpcCidr
+          - InternalInspectionVpcCidr
+      -
+        Label:
+          default: External Inspection VPC
+        Parameters:
+          - ExternalInspectionVpcCidr
       -
         Label:
           default: Egress VPC
@@ -55,15 +60,21 @@ Parameters:
     Default: ''
 
 
-  InspectionVpcCidr:
+  InternalInspectionVpcCidr:
     Type: String
-    Description: Inspection VPC CIDR
+    Description: Internal Inspection VPC CIDR
     Default: '100.64.0.0/25'
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+
+  ExternalInspectionVpcCidr:
+    Type: String
+    Description: External Inspection VPC CIDR
+    Default: '100.64.128.0/25'
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
 
   TgwAttachment:
     Type: String
-    Description: TGW ID attached to both VPCs (optional)
+    Description: TGW ID attached to VPCs (optional)
     Default: ''
   TgwRouteCidr1:
     Type: String
@@ -95,16 +106,27 @@ Conditions:
   
 Resources:
 
-  InspectionVPC:
+  InternalInspectionVPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref InspectionVpcCidr
+      CidrBlock: !Ref InternalInspectionVpcCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC' 
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC'
+
+  ExternalInspectionVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref ExternalInspectionVpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-prem Inspection VPC'
 
   EgressVPC:
     Type: AWS::EC2::VPC
@@ -145,19 +167,33 @@ Resources:
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref InetGW
 
-  InspectionTgwAttachment:
+  InternalInspectionTgwAttachment:
     Type: AWS::EC2::TransitGatewayVpcAttachment
     Condition: HasTgwAttachment
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       TransitGatewayId: !Ref TgwAttachment
       Tags:
         - Key: "Name"
-          Value: !Sub '${AWS::StackName} Inspection VPC'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC'
       SubnetIds:
-        - !Ref InspectionTGWSubnetA
-        - !Ref InspectionTGWSubnetB
-        - !Ref InspectionTGWSubnetC
+        - !Ref InternalInspectionTGWSubnetA
+        - !Ref InternalInspectionTGWSubnetB
+        - !Ref InternalInspectionTGWSubnetC
+
+  ExternalInspectionTgwAttachment:
+    Type: AWS::EC2::TransitGatewayVpcAttachment
+    Condition: HasTgwAttachment
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      TransitGatewayId: !Ref TgwAttachment
+      Tags:
+        - Key: "Name"
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC'
+      SubnetIds:
+        - !Ref ExternalInspectionTGWSubnetA
+        - !Ref ExternalInspectionTGWSubnetB
+        - !Ref ExternalInspectionTGWSubnetC
 
   EgressTgwAttachment:
     Type: AWS::EC2::TransitGatewayVpcAttachment
@@ -176,7 +212,7 @@ Resources:
   PubTGWRoute1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
-    DependsOn: InspectionTgwAttachment
+    DependsOn: InternalInspectionTgwAttachment
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: !Ref TgwRouteCidr1
@@ -184,7 +220,7 @@ Resources:
   PubTGWRoute2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
-    DependsOn: InspectionTgwAttachment
+    DependsOn: InternalInspectionTgwAttachment
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: !Ref TgwRouteCidr2
@@ -192,69 +228,68 @@ Resources:
   PubTGWRoute3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
-    DependsOn: InspectionTgwAttachment
+    DependsOn: InternalInspectionTgwAttachment
     Properties:
       RouteTableId: !Ref PubRouteTable
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
-
-  FwRouteTable:
+  InternalFwRouteTable:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW route-table'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC FW route-table'
 
-  FwDefaultRoute:
+  InternalFwDefaultRoute:
     Type: AWS::EC2::Route
     Condition: HasTgwAttachment
-    DependsOn: InspectionTgwAttachment
+    DependsOn: InternalInspectionTgwAttachment
     Properties:
-      RouteTableId: !Ref FwRouteTable
+      RouteTableId: !Ref InternalFwRouteTable
       DestinationCidrBlock: '0.0.0.0/0'
       TransitGatewayId: !Ref TgwAttachment
 
-  NetworkFW:
+  InternalNetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
-      FirewallName: !Sub '${AWS::StackName}'
-      FirewallPolicyArn: !Ref DefaultFirewallPolicy
-      VpcId: !Ref InspectionVPC
+      FirewallName: !Sub 'Internal ${AWS::StackName}'
+      FirewallPolicyArn: !Ref InternalDefaultFirewallPolicy
+      VpcId: !Ref InternalInspectionVPC
       SubnetMappings:
-        - SubnetId: !Ref InspectionFWSubnetA
-        - SubnetId: !Ref InspectionFWSubnetB
-        - SubnetId: !Ref InspectionFWSubnetC
-      Description: Network firewall to inspect outbound traffic to internet
+        - SubnetId: !Ref InternalInspectionFWSubnetA
+        - SubnetId: !Ref InternalInspectionFWSubnetB
+        - SubnetId: !Ref InternalInspectionFWSubnetC
+      Description: Network firewall to inspect traffic to on-prem networks
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} network firewall'
+          Value: !Sub '${AWS::StackName} on-prem network firewall'
   # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
-  InspectionTGWRouteA:
+  InternalInspectionTGWRouteA:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref InspectionTGWRouteTableA
+      RouteTableId: !Ref InternalInspectionTGWRouteTableA
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt InternalNetworkFW.EndpointIds ] ] ] ] ]
   # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
-  InspectionTGWRouteB:
+  InternalInspectionTGWRouteB:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref InspectionTGWRouteTableB
+      RouteTableId: !Ref InternalInspectionTGWRouteTableB
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt InternalNetworkFW.EndpointIds ] ] ] ] ]
   # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
-  InspectionTGWRouteC:
+  InternalInspectionTGWRouteC:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref InspectionTGWRouteTableC
+      RouteTableId: !Ref InternalInspectionTGWRouteTableC
       DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt NetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt InternalNetworkFW.EndpointIds ] ] ] ] ]
 
-  DefaultFirewallPolicy:
+  InternalDefaultFirewallPolicy:
     Type: 'AWS::NetworkFirewall::FirewallPolicy'
     Properties:
-      FirewallPolicyName: !Sub "${AWS::StackName}-default-policy"
+      FirewallPolicyName: !Sub "${AWS::StackName}-default-Internal-policy"
       FirewallPolicy:
         StatelessDefaultActions:
           - 'aws:pass'
@@ -263,7 +298,93 @@ Resources:
       Description: Default firewall policy passing everything
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} default policy'
+          Value: !Sub '${AWS::StackName} default on-prem policy'
+
+# ADD DEFAULT POLICY AND RuleGroup
+# Should there be 1 NFW and then fix the cross AZ routing manually?
+
+#  SampleStatefulRulegroup:
+#    Type: 'AWS::NetworkFirewall::RuleGroup'
+#    Properties:
+#      RuleGroupName: SampleStatefulRulegroupName
+#      Type: STATEFUL
+#      RuleGroup:
+#        RulesSource:
+#          RulesString: >-
+#            pass tcp 10.20.20.0/24 45400:45500 <> 10.10.10.0/24 5203
+#            (msg:"test";sid:1;rev:1;)
+#      Capacity: 100
+#      Description: Rulegroup description goes here
+#      Tags:
+#        - Key: Foo
+#          Value: Bar
+
+  ExternalFwRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref ExternalInspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} External Inspection VPC FW route-table'
+
+  ExternalFwDefaultRoute:
+    Type: AWS::EC2::Route
+    Condition: HasTgwAttachment
+    DependsOn: ExternalInspectionTgwAttachment
+    Properties:
+      RouteTableId: !Ref ExternalFwRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      TransitGatewayId: !Ref TgwAttachment
+
+  ExternalNetworkFW:
+    Type: AWS::NetworkFirewall::Firewall
+    Properties:
+      FirewallName: !Sub 'External ${AWS::StackName}'
+      FirewallPolicyArn: !Ref ExternalDefaultFirewallPolicy
+      VpcId: !Ref ExternalInspectionVPC
+      SubnetMappings:
+        - SubnetId: !Ref ExternalInspectionFWSubnetA
+        - SubnetId: !Ref ExternalInspectionFWSubnetB
+        - SubnetId: !Ref ExternalInspectionFWSubnetC
+      Description: Network firewall to inspect traffic to on-prem networks
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} on-prem network firewall'
+  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+  ExternalInspectionTGWRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref ExternalInspectionTGWRouteTableA
+      DestinationCidrBlock: '0.0.0.0/0'
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt ExternalNetworkFW.EndpointIds ] ] ] ] ]
+  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+  ExternalInspectionTGWRouteB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref ExternalInspectionTGWRouteTableB
+      DestinationCidrBlock: '0.0.0.0/0'
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt ExternalNetworkFW.EndpointIds ] ] ] ] ]
+  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+  ExternalInspectionTGWRouteC:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref ExternalInspectionTGWRouteTableC
+      DestinationCidrBlock: '0.0.0.0/0'
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt ExternalNetworkFW.EndpointIds ] ] ] ] ]
+
+  ExternalDefaultFirewallPolicy:
+    Type: 'AWS::NetworkFirewall::FirewallPolicy'
+    Properties:
+      FirewallPolicyName: !Sub "${AWS::StackName}-default-External-policy"
+      FirewallPolicy:
+        StatelessDefaultActions:
+          - 'aws:pass'
+        StatelessFragmentDefaultActions:
+          - 'aws:pass'
+      Description: Default firewall policy passing everything
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} default on-prem policy'
 
 # ADD DEFAULT POLICY AND RuleGroup
 # Should there be 1 NFW and then fix the cross AZ routing manually?
@@ -306,27 +427,49 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} Egress VPC Public subnet-A'
 
-  InspectionTGWSubnetA:
+  InternalInspectionTGWSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 0 , !Cidr [ !Ref InspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 0 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-A'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW subnet-A'
 
-  InspectionFWSubnetA:
+  InternalInspectionFWSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 4 , !Cidr [ !Ref InspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 4 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-A'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC FW subnet-A'
+
+  ExternalInspectionTGWSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Select [ 0 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW subnet-A'
+
+  ExternalInspectionFWSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}a
+      CidrBlock: !Select [ 4 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC FW subnet-A'
   NatGwA:
     Type: AWS::EC2::NatGateway
     Properties:
@@ -375,25 +518,45 @@ Resources:
       RouteTableId: !Ref PubRouteTable
       SubnetId: !Ref EgressPubSubnetA
 
-  InspectionTGWRouteTableA:
+  InternalInspectionTGWRouteTableA:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-A'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW route-table-A'
 
   InspectionTGWSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref InspectionTGWRouteTableA
-      SubnetId: !Ref InspectionTGWSubnetA
+      RouteTableId: !Ref InternalInspectionTGWRouteTableA
+      SubnetId: !Ref InternalInspectionTGWSubnetA
 
   InspectionTGWSFWRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref FwRouteTable
-      SubnetId: !Ref InspectionFWSubnetA
+      RouteTableId: !Ref InternalFwRouteTable
+      SubnetId: !Ref InternalInspectionFWSubnetA
+
+  ExternalInspectionTGWRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref ExternalInspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW route-table-A'
+
+  ExternalInspectionTGWSubnetRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ExternalInspectionTGWRouteTableA
+      SubnetId: !Ref ExternalInspectionTGWSubnetA
+
+  ExternalInspectionTGWSFWRoutingA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ExternalFwRouteTable
+      SubnetId: !Ref ExternalInspectionFWSubnetA
 
   EgressTGWRouteA1:
     Type: AWS::EC2::Route
@@ -441,27 +604,49 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} Egress VPC Public subnet-B'
 
-  InspectionTGWSubnetB:
+  InternalInspectionTGWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 1 , !Cidr [ !Ref InspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 1 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-B'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW subnet-B'
 
-  InspectionFWSubnetB:
+  InternalInspectionFWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 5 , !Cidr [ !Ref InspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 5 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-B'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC FW subnet-B'
+
+  ExternalInspectionTGWSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Select [ 1 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW subnet-B'
+
+  ExternalInspectionFWSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}b
+      CidrBlock: !Select [ 5 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC FW subnet-B'
   NatGwB:
     Type: AWS::EC2::NatGateway
     Properties:
@@ -510,25 +695,45 @@ Resources:
       RouteTableId: !Ref PubRouteTable
       SubnetId: !Ref EgressPubSubnetB
 
-  InspectionTGWRouteTableB:
+  InternalInspectionTGWRouteTableB:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-B'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW route-table-B'
 
   InspectionTGWSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref InspectionTGWRouteTableB
-      SubnetId: !Ref InspectionTGWSubnetB
+      RouteTableId: !Ref InternalInspectionTGWRouteTableB
+      SubnetId: !Ref InternalInspectionTGWSubnetB
 
   InspectionTGWSFWRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref FwRouteTable
-      SubnetId: !Ref InspectionFWSubnetB
+      RouteTableId: !Ref InternalFwRouteTable
+      SubnetId: !Ref InternalInspectionFWSubnetB
+
+  ExternalInspectionTGWRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref ExternalInspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW route-table-B'
+
+  ExternalInspectionTGWSubnetRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ExternalInspectionTGWRouteTableB
+      SubnetId: !Ref ExternalInspectionTGWSubnetB
+
+  ExternalInspectionTGWSFWRoutingB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ExternalFwRouteTable
+      SubnetId: !Ref ExternalInspectionFWSubnetB
 
   EgressTGWRouteB1:
     Type: AWS::EC2::Route
@@ -576,27 +781,49 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} Egress VPC Public subnet-C'
 
-  InspectionTGWSubnetC:
+  InternalInspectionTGWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 2 , !Cidr [ !Ref InspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 2 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW subnet-C'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW subnet-C'
 
-  InspectionFWSubnetC:
+  InternalInspectionFWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 6 , !Cidr [ !Ref InspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 6 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC FW subnet-C'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC FW subnet-C'
+
+  ExternalInspectionTGWSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Select [ 2 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW subnet-C'
+
+  ExternalInspectionFWSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ExternalInspectionVPC
+      AvailabilityZone: !Sub ${AWS::Region}c
+      CidrBlock: !Select [ 6 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC FW subnet-C'
   NatGwC:
     Type: AWS::EC2::NatGateway
     Properties:
@@ -645,25 +872,45 @@ Resources:
       RouteTableId: !Ref PubRouteTable
       SubnetId: !Ref EgressPubSubnetC
 
-  InspectionTGWRouteTableC:
+  InternalInspectionTGWRouteTableC:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref InspectionVPC
+      VpcId: !Ref InternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Inspection VPC TGW route-table-C'
+          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW route-table-C'
 
   InspectionTGWSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref InspectionTGWRouteTableC
-      SubnetId: !Ref InspectionTGWSubnetC
+      RouteTableId: !Ref InternalInspectionTGWRouteTableC
+      SubnetId: !Ref InternalInspectionTGWSubnetC
 
   InspectionTGWSFWRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref FwRouteTable
-      SubnetId: !Ref InspectionFWSubnetC
+      RouteTableId: !Ref InternalFwRouteTable
+      SubnetId: !Ref InternalInspectionFWSubnetC
+
+  ExternalInspectionTGWRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref ExternalInspectionVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW route-table-C'
+
+  ExternalInspectionTGWSubnetRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ExternalInspectionTGWRouteTableC
+      SubnetId: !Ref ExternalInspectionTGWSubnetC
+
+  ExternalInspectionTGWSFWRoutingC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ExternalFwRouteTable
+      SubnetId: !Ref ExternalInspectionFWSubnetC
 
   EgressTGWRouteC1:
     Type: AWS::EC2::Route
@@ -698,8 +945,14 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-EgressVpcId'
 
-  InspectionVpcId:
+  InternalInspectionVpcId:
     Description: VPC ID
-    Value: !Ref InspectionVPC
+    Value: !Ref InternalInspectionVPC
     Export:
-      Name: !Sub '${AWS::StackName}-InspectionVpcId'
+      Name: !Sub '${AWS::StackName}-InternalInspectionVpcId'
+
+  ExternalInspectionVpcId:
+    Description: VPC ID
+    Value: !Ref ExternalInspectionVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-ExternalInspectionVpcId'
