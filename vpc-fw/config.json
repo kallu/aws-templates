@@ -2,7 +2,7 @@
     "VPC": {
       "internalinspection": "100.64.0.0/25",
       "externalinspection": "100.64.128.0/25",
-      "egress": "10.0.0.0/25"
+      "edge": "10.0.0.0/21"
     },
     "AZ": [
         {

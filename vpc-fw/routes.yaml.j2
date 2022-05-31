@@ -1,29 +1,29 @@
-  EgressTGWRouteTable{{x.az|upper}}:
+  EdgeTGWRouteTable{{x.az|upper}}:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Edge VPC TGW route-table-{{x.az|upper}}'
 
-  EgressTGWSubnetRouting{{x.az|upper}}:
+  EdgeTGWSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTable{{x.az|upper}}
-      SubnetId: !Ref EgressTGWSubnet{{x.az|upper}}
+      RouteTableId: !Ref EdgeTGWRouteTable{{x.az|upper}}
+      SubnetId: !Ref EdgeTGWSubnet{{x.az|upper}}
 
-  EgressTGWDefaultRoute{{x.az|upper}}:
+  EdgeTGWDefaultRoute{{x.az|upper}}:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTable{{x.az|upper}}
+      RouteTableId: !Ref EdgeTGWRouteTable{{x.az|upper}}
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGw{{x.az|upper}}
 
-  EgressPubSubnetRouting{{x.az|upper}}:
+  EdgePubSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressPubSubnet{{x.az|upper}}
+      SubnetId: !Ref EdgePubSubnet{{x.az|upper}}
 
   InternalInspectionTGWRouteTable{{x.az|upper}}:
     Type: AWS::EC2::RouteTable

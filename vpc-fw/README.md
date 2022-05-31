@@ -1,14 +1,14 @@
-## AWS Inspection and Egress VPCs template
+## AWS Inspection and Edge VPCs template
 
 Below is based on the implementation of **"3) North-South: Centralized internet egress"** from AWS blog [Deployment models for AWS Network Firewall](https://aws.amazon.com/blogs/networking-and-content-delivery/deployment-models-for-aws-network-firewall/)
 
 ### Template features
-* 3 VPCs; internal + external inspection and egress
+* 3 VPCs; internal + external inspection and edge
 * Subnets for each AZ in all VPCs
 * One layer of subnets to host TGW attachments
 * One layer of subnets to host Network Firewall or NAT Gateways.
-* Internet gataway attached to egress VPC
-* Public NAT gateway for each AZ in egress VPC
+* Internet gataway attached to edge VPC
+* Public NAT gateway for each AZ in edge VPC
 * Option to use pre-allocated EIPs for Public NAT gateways
 * 2 Network Firewall deployed across all AZs in internal and external inspection VPCs
 
@@ -27,11 +27,11 @@ be in any of TGW route-tables, only the default route 0.0.0.0/0 will point to in
 It is also not routable CIDR in AWS so there is no risk that any of client VPCs connected to TGW would
 have overlap with these.
 
-#### Egress VPC 
+#### Edge VPC 
 
-   * EgressVpcCidr (default 10.0.0.0/25)
+   * EdgeVpcCidr (default 10.0.0.0/21)
 
-/25 CIDR for egress VPC. This is split to /28 subnets for each AZ for TGW attachments and NAT gateways.
+/21 CIDR for edge VPC. This is split to subnets for each AZ for TGW attachments and NAT gateways.
 Here you must ensure the CIDR doesn't overlap with any other networks reachable from TGW.
 
    * EipA (optional)

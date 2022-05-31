@@ -26,16 +26,16 @@
         - !Ref ExternalInspectionTGWSubnet{{x.az|upper}}
 {%- endfor %}
 
-  EgressTgwAttachment:
+  EdgeTgwAttachment:
     Type: AWS::EC2::TransitGatewayVpcAttachment
     Condition: HasTgwAttachment
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       TransitGatewayId: !Ref TgwAttachment
       Tags:
         - Key: "Name"
-          Value: !Sub '${AWS::StackName} Egress VPC'
+          Value: !Sub '${AWS::StackName} Edge VPC'
       SubnetIds:
 {%- for x in AZ %}
-        - !Ref EgressTGWSubnet{{x.az|upper}}
+        - !Ref EdgeTGWSubnet{{x.az|upper}}
 {%- endfor %}

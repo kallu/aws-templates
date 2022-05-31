@@ -3,21 +3,21 @@
     Properties:
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName} Egress VPC Internet gateway'
+        Value: !Sub '${AWS::StackName} Edge VPC Internet gateway'
 
   InetGWattachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       InternetGatewayId: !Ref InetGW
 
   PubRouteTable:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public route-table'
+          Value: !Sub '${AWS::StackName} Edge VPC Public route-table'
 
   PubDefaultRoute:
     Type: AWS::EC2::Route

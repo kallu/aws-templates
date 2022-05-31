@@ -20,7 +20,7 @@
 
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Inspection + Egress VPCs v1.0.0
+Description: Inspection + Edge VPCs v1.0.0
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -37,9 +37,9 @@ Metadata:
           - ExternalInspectionVpcCidr
       -
         Label:
-          default: Egress VPC
+          default: Edge VPC
         Parameters:
-          - EgressVpcCidr
+          - EdgeVpcCidr
 {%- for x in AZ %}
           - Eip{{x.az|upper}}
 {%- endfor %}
@@ -54,10 +54,10 @@ Metadata:
 
 Parameters:
 
-  EgressVpcCidr:
+  EdgeVpcCidr:
     Type: String
-    Description: Egress VPC CIDR
-    Default: '{{VPC.egress}}'
+    Description: Edge VPC CIDR
+    Default: '{{VPC.edge}}'
     AllowedPattern: "{{Pattern.VPC_PRIMARY_CIDR}}"
 
 {%- for x in AZ %}
@@ -87,7 +87,7 @@ Parameters:
 {%- for x in [1,2,3] %}
   TgwRouteCidr{{x}}:
     Type: String
-    Description: CIDR to be routed from Egress to TGW (optional)
+    Description: CIDR to be routed from Edge to TGW (optional)
     Default: ''
     AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
 {%- endfor %}
@@ -126,16 +126,16 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} On-prem Inspection VPC'
 
-  EgressVPC:
+  EdgeVPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref EgressVpcCidr
+      CidrBlock: !Ref EdgeVpcCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC'
+          Value: !Sub '${AWS::StackName} Edge VPC'
 
 {% include 'internetaccess.yaml.j2' %}
 {% include 'tgwattachment.yaml.j2' %}
@@ -160,12 +160,12 @@ Resources:
 {% include 'nat.yaml.j2' %}
 {% include 'routes.yaml.j2' %}
 {%- for n in [1,2,3] %}
-  EgressTGWRoute{{x.az|upper}}{{n}}:
+  EdgeTGWRoute{{x.az|upper}}{{n}}:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute{{n}}
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTable{{x.az|upper}}
+      RouteTableId: !Ref EdgeTGWRouteTable{{x.az|upper}}
       DestinationCidrBlock: !Ref TgwRouteCidr{{n}}
       TransitGatewayId: !Ref TgwAttachment
 {%- endfor %}
@@ -173,11 +173,11 @@ Resources:
 
 Outputs:
 
-  EgressVpcId:
+  EdgeVpcId:
     Description: VPC ID
-    Value: !Ref EgressVPC
+    Value: !Ref EdgeVPC
     Export:
-      Name: !Sub '${AWS::StackName}-EgressVpcId'
+      Name: !Sub '${AWS::StackName}-EdgeVpcId'
 
   InternalInspectionVpcId:
     Description: VPC ID

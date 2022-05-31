@@ -2,11 +2,11 @@
     Type: AWS::EC2::NatGateway
     Properties:
       ConnectivityType: public
-      SubnetId: !Ref EgressPubSubnet{{x.az|upper}}
+      SubnetId: !Ref EdgePubSubnet{{x.az|upper}}
       AllocationId: !If [ CreateEip{{x.az|upper}}, !GetAtt NatEip{{x.az|upper}}.AllocationId, !Ref Eip{{x.az|upper}} ]
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Edge VPC NAT-{{x.az|upper}}'
 
   NatEip{{x.az|upper}}:
     Type: AWS::EC2::EIP
@@ -17,4 +17,4 @@
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Edge VPC NAT-{{x.az|upper}}'

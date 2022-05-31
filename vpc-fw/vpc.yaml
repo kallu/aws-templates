@@ -5,7 +5,7 @@
 
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Inspection + Egress VPCs v1.0.0
+Description: Inspection + Edge VPCs v1.0.0
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -22,9 +22,9 @@ Metadata:
           - ExternalInspectionVpcCidr
       -
         Label:
-          default: Egress VPC
+          default: Edge VPC
         Parameters:
-          - EgressVpcCidr
+          - EdgeVpcCidr
           - EipA
           - EipB
           - EipC
@@ -39,10 +39,10 @@ Metadata:
 
 Parameters:
 
-  EgressVpcCidr:
+  EdgeVpcCidr:
     Type: String
-    Description: Egress VPC CIDR
-    Default: '10.0.0.0/25'
+    Description: Edge VPC CIDR
+    Default: '10.0.0.0/21'
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
   EipA:
     Type: String
@@ -78,17 +78,17 @@ Parameters:
     Default: ''
   TgwRouteCidr1:
     Type: String
-    Description: CIDR to be routed from Egress to TGW (optional)
+    Description: CIDR to be routed from Edge to TGW (optional)
     Default: ''
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   TgwRouteCidr2:
     Type: String
-    Description: CIDR to be routed from Egress to TGW (optional)
+    Description: CIDR to be routed from Edge to TGW (optional)
     Default: ''
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   TgwRouteCidr3:
     Type: String
-    Description: CIDR to be routed from Egress to TGW (optional)
+    Description: CIDR to be routed from Edge to TGW (optional)
     Default: ''
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
 
@@ -128,37 +128,37 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName} On-prem Inspection VPC'
 
-  EgressVPC:
+  EdgeVPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref EgressVpcCidr
+      CidrBlock: !Ref EdgeVpcCidr
       EnableDnsSupport: true
       EnableDnsHostnames: true
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC'
+          Value: !Sub '${AWS::StackName} Edge VPC'
 
   InetGW:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
       - Key: Name
-        Value: !Sub '${AWS::StackName} Egress VPC Internet gateway'
+        Value: !Sub '${AWS::StackName} Edge VPC Internet gateway'
 
   InetGWattachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       InternetGatewayId: !Ref InetGW
 
   PubRouteTable:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public route-table'
+          Value: !Sub '${AWS::StackName} Edge VPC Public route-table'
 
   PubDefaultRoute:
     Type: AWS::EC2::Route
@@ -195,19 +195,19 @@ Resources:
         - !Ref ExternalInspectionTGWSubnetB
         - !Ref ExternalInspectionTGWSubnetC
 
-  EgressTgwAttachment:
+  EdgeTgwAttachment:
     Type: AWS::EC2::TransitGatewayVpcAttachment
     Condition: HasTgwAttachment
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       TransitGatewayId: !Ref TgwAttachment
       Tags:
         - Key: "Name"
-          Value: !Sub '${AWS::StackName} Egress VPC'
+          Value: !Sub '${AWS::StackName} Edge VPC'
       SubnetIds:
-        - !Ref EgressTGWSubnetA
-        - !Ref EgressTGWSubnetB
-        - !Ref EgressTGWSubnetC
+        - !Ref EdgeTGWSubnetA
+        - !Ref EdgeTGWSubnetB
+        - !Ref EdgeTGWSubnetC
 
   PubTGWRoute1:
     Type: AWS::EC2::Route
@@ -405,27 +405,27 @@ Resources:
 #        - Key: Foo
 #          Value: Bar
 
-  EgressTGWSubnetA:
+  EdgeTGWSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 0 , !Cidr [ !Ref EgressVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 0 , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-A'
+          Value: !Sub '${AWS::StackName} Edge VPC TGW subnet-A'
 
-  EgressPubSubnetA:
+  EdgePubSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 4 , !Cidr [ !Ref EgressVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 4 , !Cidr [ !Ref EdgeVpcCidr, 8, 8 ] ]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-A'
+          Value: !Sub '${AWS::StackName} Edge VPC Public subnet-A'
 
   InternalInspectionTGWSubnetA:
     Type: AWS::EC2::Subnet
@@ -474,11 +474,11 @@ Resources:
     Type: AWS::EC2::NatGateway
     Properties:
       ConnectivityType: public
-      SubnetId: !Ref EgressPubSubnetA
+      SubnetId: !Ref EdgePubSubnetA
       AllocationId: !If [ CreateEipA, !GetAtt NatEipA.AllocationId, !Ref EipA ]
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-A'
+          Value: !Sub '${AWS::StackName} Edge VPC NAT-A'
 
   NatEipA:
     Type: AWS::EC2::EIP
@@ -489,34 +489,34 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-A'
+          Value: !Sub '${AWS::StackName} Edge VPC NAT-A'
 
-  EgressTGWRouteTableA:
+  EdgeTGWRouteTableA:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-A'
+          Value: !Sub '${AWS::StackName} Edge VPC TGW route-table-A'
 
-  EgressTGWSubnetRoutingA:
+  EdgeTGWSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableA
-      SubnetId: !Ref EgressTGWSubnetA
+      RouteTableId: !Ref EdgeTGWRouteTableA
+      SubnetId: !Ref EdgeTGWSubnetA
 
-  EgressTGWDefaultRouteA:
+  EdgeTGWDefaultRouteA:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableA
+      RouteTableId: !Ref EdgeTGWRouteTableA
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGwA
 
-  EgressPubSubnetRoutingA:
+  EdgePubSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressPubSubnetA
+      SubnetId: !Ref EdgePubSubnetA
 
   InternalInspectionTGWRouteTableA:
     Type: AWS::EC2::RouteTable
@@ -558,51 +558,51 @@ Resources:
       RouteTableId: !Ref ExternalFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnetA
 
-  EgressTGWRouteA1:
+  EdgeTGWRouteA1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableA
+      RouteTableId: !Ref EdgeTGWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr1
       TransitGatewayId: !Ref TgwAttachment
-  EgressTGWRouteA2:
+  EdgeTGWRouteA2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableA
+      RouteTableId: !Ref EdgeTGWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr2
       TransitGatewayId: !Ref TgwAttachment
-  EgressTGWRouteA3:
+  EdgeTGWRouteA3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableA
+      RouteTableId: !Ref EdgeTGWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
-  EgressTGWSubnetB:
+  EdgeTGWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 1 , !Cidr [ !Ref EgressVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 1 , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-B'
+          Value: !Sub '${AWS::StackName} Edge VPC TGW subnet-B'
 
-  EgressPubSubnetB:
+  EdgePubSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 5 , !Cidr [ !Ref EgressVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 5 , !Cidr [ !Ref EdgeVpcCidr, 8, 8 ] ]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-B'
+          Value: !Sub '${AWS::StackName} Edge VPC Public subnet-B'
 
   InternalInspectionTGWSubnetB:
     Type: AWS::EC2::Subnet
@@ -651,11 +651,11 @@ Resources:
     Type: AWS::EC2::NatGateway
     Properties:
       ConnectivityType: public
-      SubnetId: !Ref EgressPubSubnetB
+      SubnetId: !Ref EdgePubSubnetB
       AllocationId: !If [ CreateEipB, !GetAtt NatEipB.AllocationId, !Ref EipB ]
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-B'
+          Value: !Sub '${AWS::StackName} Edge VPC NAT-B'
 
   NatEipB:
     Type: AWS::EC2::EIP
@@ -666,34 +666,34 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-B'
+          Value: !Sub '${AWS::StackName} Edge VPC NAT-B'
 
-  EgressTGWRouteTableB:
+  EdgeTGWRouteTableB:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-B'
+          Value: !Sub '${AWS::StackName} Edge VPC TGW route-table-B'
 
-  EgressTGWSubnetRoutingB:
+  EdgeTGWSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableB
-      SubnetId: !Ref EgressTGWSubnetB
+      RouteTableId: !Ref EdgeTGWRouteTableB
+      SubnetId: !Ref EdgeTGWSubnetB
 
-  EgressTGWDefaultRouteB:
+  EdgeTGWDefaultRouteB:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableB
+      RouteTableId: !Ref EdgeTGWRouteTableB
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGwB
 
-  EgressPubSubnetRoutingB:
+  EdgePubSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressPubSubnetB
+      SubnetId: !Ref EdgePubSubnetB
 
   InternalInspectionTGWRouteTableB:
     Type: AWS::EC2::RouteTable
@@ -735,51 +735,51 @@ Resources:
       RouteTableId: !Ref ExternalFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnetB
 
-  EgressTGWRouteB1:
+  EdgeTGWRouteB1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableB
+      RouteTableId: !Ref EdgeTGWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr1
       TransitGatewayId: !Ref TgwAttachment
-  EgressTGWRouteB2:
+  EdgeTGWRouteB2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableB
+      RouteTableId: !Ref EdgeTGWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr2
       TransitGatewayId: !Ref TgwAttachment
-  EgressTGWRouteB3:
+  EdgeTGWRouteB3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableB
+      RouteTableId: !Ref EdgeTGWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
-  EgressTGWSubnetC:
+  EdgeTGWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 2 , !Cidr [ !Ref EgressVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 2 , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-C'
+          Value: !Sub '${AWS::StackName} Edge VPC TGW subnet-C'
 
-  EgressPubSubnetC:
+  EdgePubSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 6 , !Cidr [ !Ref EgressVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ 6 , !Cidr [ !Ref EdgeVpcCidr, 8, 8 ] ]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-C'
+          Value: !Sub '${AWS::StackName} Edge VPC Public subnet-C'
 
   InternalInspectionTGWSubnetC:
     Type: AWS::EC2::Subnet
@@ -828,11 +828,11 @@ Resources:
     Type: AWS::EC2::NatGateway
     Properties:
       ConnectivityType: public
-      SubnetId: !Ref EgressPubSubnetC
+      SubnetId: !Ref EdgePubSubnetC
       AllocationId: !If [ CreateEipC, !GetAtt NatEipC.AllocationId, !Ref EipC ]
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-C'
+          Value: !Sub '${AWS::StackName} Edge VPC NAT-C'
 
   NatEipC:
     Type: AWS::EC2::EIP
@@ -843,34 +843,34 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC NAT-C'
+          Value: !Sub '${AWS::StackName} Edge VPC NAT-C'
 
-  EgressTGWRouteTableC:
+  EdgeTGWRouteTableC:
     Type: AWS::EC2::RouteTable
     Properties: 
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW route-table-C'
+          Value: !Sub '${AWS::StackName} Edge VPC TGW route-table-C'
 
-  EgressTGWSubnetRoutingC:
+  EdgeTGWSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableC
-      SubnetId: !Ref EgressTGWSubnetC
+      RouteTableId: !Ref EdgeTGWRouteTableC
+      SubnetId: !Ref EdgeTGWSubnetC
 
-  EgressTGWDefaultRouteC:
+  EdgeTGWDefaultRouteC:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableC
+      RouteTableId: !Ref EdgeTGWRouteTableC
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGwC
 
-  EgressPubSubnetRoutingC:
+  EdgePubSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTable
-      SubnetId: !Ref EgressPubSubnetC
+      SubnetId: !Ref EdgePubSubnetC
 
   InternalInspectionTGWRouteTableC:
     Type: AWS::EC2::RouteTable
@@ -912,38 +912,38 @@ Resources:
       RouteTableId: !Ref ExternalFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnetC
 
-  EgressTGWRouteC1:
+  EdgeTGWRouteC1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableC
+      RouteTableId: !Ref EdgeTGWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr1
       TransitGatewayId: !Ref TgwAttachment
-  EgressTGWRouteC2:
+  EdgeTGWRouteC2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableC
+      RouteTableId: !Ref EdgeTGWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr2
       TransitGatewayId: !Ref TgwAttachment
-  EgressTGWRouteC3:
+  EdgeTGWRouteC3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
-    DependsOn: EgressTgwAttachment
+    DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EgressTGWRouteTableC
+      RouteTableId: !Ref EdgeTGWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
 
 Outputs:
 
-  EgressVpcId:
+  EdgeVpcId:
     Description: VPC ID
-    Value: !Ref EgressVPC
+    Value: !Ref EdgeVPC
     Export:
-      Name: !Sub '${AWS::StackName}-EgressVpcId'
+      Name: !Sub '${AWS::StackName}-EdgeVpcId'
 
   InternalInspectionVpcId:
     Description: VPC ID

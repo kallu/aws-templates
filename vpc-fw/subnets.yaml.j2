@@ -1,24 +1,24 @@
-  EgressTGWSubnet{{x.az|upper}}:
+  EdgeTGWSubnet{{x.az|upper}}:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
-      CidrBlock: !Select [ {{x.index}} , !Cidr [ !Ref EgressVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ {{x.index}} , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC TGW subnet-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Edge VPC TGW subnet-{{x.az|upper}}'
 
-  EgressPubSubnet{{x.az|upper}}:
+  EdgePubSubnet{{x.az|upper}}:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref EgressVPC
+      VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}{{x.az|lower}}
-      CidrBlock: !Select [ {{x.index + 4}} , !Cidr [ !Ref EgressVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select [ {{x.index + 4}} , !Cidr [ !Ref EdgeVpcCidr, 8, 8 ] ]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Egress VPC Public subnet-{{x.az|upper}}'
+          Value: !Sub '${AWS::StackName} Edge VPC Public subnet-{{x.az|upper}}'
 
   InternalInspectionTGWSubnet{{x.az|upper}}:
     Type: AWS::EC2::Subnet
