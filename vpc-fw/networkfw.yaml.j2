@@ -1,3 +1,4 @@
+{%- if name != 'Edge' %}
   {{name}}FwRouteTable:
     Type: AWS::EC2::RouteTable
     Properties: 
@@ -14,6 +15,7 @@
       RouteTableId: !Ref {{name}}FwRouteTable
       DestinationCidrBlock: '0.0.0.0/0'
       TransitGatewayId: !Ref TgwAttachment
+{%- endif %}
 
   {{name}}NetworkFW:
     Type: AWS::NetworkFirewall::Firewall

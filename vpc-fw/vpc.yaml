@@ -79,12 +79,12 @@ Parameters:
   TgwRouteCidr1:
     Type: String
     Description: CIDR to be routed from Edge to TGW (optional)
-    Default: ''
+    Default: '157.200.0.0/16'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   TgwRouteCidr2:
     Type: String
     Description: CIDR to be routed from Edge to TGW (optional)
-    Default: ''
+    Default: '10.120.0.0/16'
     AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
   TgwRouteCidr3:
     Type: String
@@ -149,21 +149,6 @@ Resources:
       VpcId: !Ref EdgeVPC
       InternetGatewayId: !Ref InetGW
 
-  PubRouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref EdgeVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Public route-table'
-
-  PubDefaultRoute:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PubRouteTable
-      DestinationCidrBlock: '0.0.0.0/0'
-      GatewayId: !Ref InetGW
-
   InternalInspectionTgwAttachment:
     Type: AWS::EC2::TransitGatewayVpcAttachment
     Condition: HasTgwAttachment
@@ -206,30 +191,7 @@ Resources:
         - !Ref EdgeTGWSubnetB
         - !Ref EdgeTGWSubnetC
 
-  PubTGWRoute1:
-    Type: AWS::EC2::Route
-    Condition: AddTgwRoute1
-    DependsOn: InternalInspectionTgwAttachment
-    Properties:
-      RouteTableId: !Ref PubRouteTable
-      DestinationCidrBlock: !Ref TgwRouteCidr1
-      TransitGatewayId: !Ref TgwAttachment
-  PubTGWRoute2:
-    Type: AWS::EC2::Route
-    Condition: AddTgwRoute2
-    DependsOn: InternalInspectionTgwAttachment
-    Properties:
-      RouteTableId: !Ref PubRouteTable
-      DestinationCidrBlock: !Ref TgwRouteCidr2
-      TransitGatewayId: !Ref TgwAttachment
-  PubTGWRoute3:
-    Type: AWS::EC2::Route
-    Condition: AddTgwRoute3
-    DependsOn: InternalInspectionTgwAttachment
-    Properties:
-      RouteTableId: !Ref PubRouteTable
-      DestinationCidrBlock: !Ref TgwRouteCidr3
-      TransitGatewayId: !Ref TgwAttachment
+
   InternalInspectionFwRouteTable:
     Type: AWS::EC2::RouteTable
     Properties: 
@@ -315,6 +277,7 @@ Resources:
 #      Tags:
 #        - Key: Foo
 #          Value: Bar
+
 
   ExternalInspectionFwRouteTable:
     Type: AWS::EC2::RouteTable
@@ -402,22 +365,7 @@ Resources:
 #        - Key: Foo
 #          Value: Bar
 
-  EdgeFwRouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref EdgeVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC FW route-table'
 
-  EdgeFwDefaultRoute:
-    Type: AWS::EC2::Route
-    Condition: HasTgwAttachment
-    DependsOn: EdgeTgwAttachment
-    Properties:
-      RouteTableId: !Ref EdgeFwRouteTable
-      DestinationCidrBlock: '0.0.0.0/0'
-      TransitGatewayId: !Ref TgwAttachment
 
   EdgeNetworkFW:
     Type: AWS::NetworkFirewall::Firewall
@@ -576,8 +524,8 @@ Resources:
 
   NatEipA:
     Type: AWS::EC2::EIP
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    # DeletionPolicy: Retain
+    # UpdateReplacePolicy: Retain
     Condition: CreateEipA
     Properties:
       Domain: vpc
@@ -599,13 +547,6 @@ Resources:
       RouteTableId: !Ref EdgeTGWRouteTableA
       SubnetId: !Ref EdgeTGWSubnetA
 
-  EdgeTGWDefaultRouteA:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableA
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwA
-
   EdgeFWRouteTableA:
     Type: AWS::EC2::RouteTable
     Properties: 
@@ -620,10 +561,17 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableA
       SubnetId: !Ref EdgeFWSubnetA
 
+  EdgeFWDefaultRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EdgeFWRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGwA
+      
   EdgePubSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PubRouteTable
+      RouteTableId: !Ref PubRouteTableA
       SubnetId: !Ref EdgePubSubnetA
 
   InternalInspectionTGWRouteTableA:
@@ -666,30 +614,69 @@ Resources:
       RouteTableId: !Ref ExternalInspectionFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnetA
 
-  EdgeTGWRouteA1:
+
+  PubRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EdgeVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Edge VPC Public route-table-A'
+
+  PubDefaultRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PubRouteTableA
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+  EdgeFWRouteA1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableA
+      RouteTableId: !Ref EdgeFWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr1
       TransitGatewayId: !Ref TgwAttachment
-  EdgeTGWRouteA2:
+
+  EdgePubRouteA1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref PubRouteTableA
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+  EdgeFWRouteA2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableA
+      RouteTableId: !Ref EdgeFWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr2
       TransitGatewayId: !Ref TgwAttachment
-  EdgeTGWRouteA3:
+
+  EdgePubRouteA2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref PubRouteTableA
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+  EdgeFWRouteA3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableA
+      RouteTableId: !Ref EdgeFWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
+
+  EdgePubRouteA3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref PubRouteTableA
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
   EdgeTGWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -778,8 +765,8 @@ Resources:
 
   NatEipB:
     Type: AWS::EC2::EIP
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    # DeletionPolicy: Retain
+    # UpdateReplacePolicy: Retain
     Condition: CreateEipB
     Properties:
       Domain: vpc
@@ -801,13 +788,6 @@ Resources:
       RouteTableId: !Ref EdgeTGWRouteTableB
       SubnetId: !Ref EdgeTGWSubnetB
 
-  EdgeTGWDefaultRouteB:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableB
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwB
-
   EdgeFWRouteTableB:
     Type: AWS::EC2::RouteTable
     Properties: 
@@ -822,10 +802,17 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableB
       SubnetId: !Ref EdgeFWSubnetB
 
+  EdgeFWDefaultRouteB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EdgeFWRouteTableB
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGwB
+      
   EdgePubSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PubRouteTable
+      RouteTableId: !Ref PubRouteTableB
       SubnetId: !Ref EdgePubSubnetB
 
   InternalInspectionTGWRouteTableB:
@@ -868,30 +855,69 @@ Resources:
       RouteTableId: !Ref ExternalInspectionFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnetB
 
-  EdgeTGWRouteB1:
+
+  PubRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EdgeVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Edge VPC Public route-table-B'
+
+  PubDefaultRouteB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PubRouteTableB
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+  EdgeFWRouteB1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableB
+      RouteTableId: !Ref EdgeFWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr1
       TransitGatewayId: !Ref TgwAttachment
-  EdgeTGWRouteB2:
+
+  EdgePubRouteB1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref PubRouteTableB
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+  EdgeFWRouteB2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableB
+      RouteTableId: !Ref EdgeFWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr2
       TransitGatewayId: !Ref TgwAttachment
-  EdgeTGWRouteB3:
+
+  EdgePubRouteB2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref PubRouteTableB
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+  EdgeFWRouteB3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableB
+      RouteTableId: !Ref EdgeFWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
+
+  EdgePubRouteB3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref PubRouteTableB
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
   EdgeTGWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
@@ -980,8 +1006,8 @@ Resources:
 
   NatEipC:
     Type: AWS::EC2::EIP
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    # DeletionPolicy: Retain
+    # UpdateReplacePolicy: Retain
     Condition: CreateEipC
     Properties:
       Domain: vpc
@@ -1003,13 +1029,6 @@ Resources:
       RouteTableId: !Ref EdgeTGWRouteTableC
       SubnetId: !Ref EdgeTGWSubnetC
 
-  EdgeTGWDefaultRouteC:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableC
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGwC
-
   EdgeFWRouteTableC:
     Type: AWS::EC2::RouteTable
     Properties: 
@@ -1024,10 +1043,17 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableC
       SubnetId: !Ref EdgeFWSubnetC
 
+  EdgeFWDefaultRouteC:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EdgeFWRouteTableC
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGwC
+      
   EdgePubSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PubRouteTable
+      RouteTableId: !Ref PubRouteTableC
       SubnetId: !Ref EdgePubSubnetC
 
   InternalInspectionTGWRouteTableC:
@@ -1070,30 +1096,69 @@ Resources:
       RouteTableId: !Ref ExternalInspectionFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnetC
 
-  EdgeTGWRouteC1:
+
+  PubRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EdgeVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Edge VPC Public route-table-C'
+
+  PubDefaultRouteC:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PubRouteTableC
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+  EdgeFWRouteC1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableC
+      RouteTableId: !Ref EdgeFWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr1
       TransitGatewayId: !Ref TgwAttachment
-  EdgeTGWRouteC2:
+
+  EdgePubRouteC1:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute1
+    Properties:
+      RouteTableId: !Ref PubRouteTableC
+      DestinationCidrBlock: !Ref TgwRouteCidr1
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+  EdgeFWRouteC2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableC
+      RouteTableId: !Ref EdgeFWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr2
       TransitGatewayId: !Ref TgwAttachment
-  EdgeTGWRouteC3:
+
+  EdgePubRouteC2:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute2
+    Properties:
+      RouteTableId: !Ref PubRouteTableC
+      DestinationCidrBlock: !Ref TgwRouteCidr2
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+  EdgeFWRouteC3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTableC
+      RouteTableId: !Ref EdgeFWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
+
+  EdgePubRouteC3:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute3
+    Properties:
+      RouteTableId: !Ref PubRouteTableC
+      DestinationCidrBlock: !Ref TgwRouteCidr3
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
 
 Outputs:
   InternalInspectionVpcId:

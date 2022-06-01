@@ -88,7 +88,7 @@ Parameters:
   TgwRouteCidr{{x}}:
     Type: String
     Description: CIDR to be routed from Edge to TGW (optional)
-    Default: ''
+    Default: '{{Routes[x-1]}}'
     AllowedPattern: "{{Pattern.VPC_SUBNET_CIDR}}"
 {%- endfor %}
 
@@ -120,17 +120,6 @@ Resources:
 {% include 'internetaccess.yaml.j2' %}
 {% include 'tgwattachment.yaml.j2' %}
 
-{%- for n in [1,2,3] %}
-  PubTGWRoute{{n}}:
-    Type: AWS::EC2::Route
-    Condition: AddTgwRoute{{n}}
-    DependsOn: InternalInspectionTgwAttachment
-    Properties:
-      RouteTableId: !Ref PubRouteTable
-      DestinationCidrBlock: !Ref TgwRouteCidr{{n}}
-      TransitGatewayId: !Ref TgwAttachment
-{%- endfor %}
-
 {%- for name in VPC.names %}
 {% include 'networkfw.yaml.j2' %}
 {%- endfor %}
@@ -139,15 +128,39 @@ Resources:
 {% include 'subnets.yaml.j2' %}
 {% include 'nat.yaml.j2' %}
 {% include 'routes.yaml.j2' %}
+
+  PubRouteTable{{x.az|upper}}:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref EdgeVPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} Edge VPC Public route-table-{{x.az|upper}}'
+
+  PubDefaultRoute{{x.az|upper}}:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PubRouteTable{{x.az|upper}}
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+
 {%- for n in [1,2,3] %}
-  EdgeTGWRoute{{x.az|upper}}{{n}}:
+  EdgeFWRoute{{x.az|upper}}{{n}}:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute{{n}}
     DependsOn: EdgeTgwAttachment
     Properties:
-      RouteTableId: !Ref EdgeTGWRouteTable{{x.az|upper}}
+      RouteTableId: !Ref EdgeFWRouteTable{{x.az|upper}}
       DestinationCidrBlock: !Ref TgwRouteCidr{{n}}
       TransitGatewayId: !Ref TgwAttachment
+
+  EdgePubRoute{{x.az|upper}}{{n}}:
+    Type: AWS::EC2::Route
+    Condition: AddTgwRoute{{n}}
+    Properties:
+      RouteTableId: !Ref PubRouteTable{{x.az|upper}}
+      DestinationCidrBlock: !Ref TgwRouteCidr{{n}}
+      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ '{{x.az|lower}}:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
 {%- endfor %}
 {%- endfor %}
 

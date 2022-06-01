@@ -10,18 +10,3 @@
     Properties:
       VpcId: !Ref EdgeVPC
       InternetGatewayId: !Ref InetGW
-
-  PubRouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties: 
-      VpcId: !Ref EdgeVPC
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Public route-table'
-
-  PubDefaultRoute:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PubRouteTable
-      DestinationCidrBlock: '0.0.0.0/0'
-      GatewayId: !Ref InetGW

@@ -12,13 +12,6 @@
       RouteTableId: !Ref EdgeTGWRouteTable{{x.az|upper}}
       SubnetId: !Ref EdgeTGWSubnet{{x.az|upper}}
 
-  EdgeTGWDefaultRoute{{x.az|upper}}:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref EdgeTGWRouteTable{{x.az|upper}}
-      DestinationCidrBlock: '0.0.0.0/0'
-      NatGatewayId: !Ref NatGw{{x.az|upper}}
-
   EdgeFWRouteTable{{x.az|upper}}:
     Type: AWS::EC2::RouteTable
     Properties: 
@@ -33,10 +26,17 @@
       RouteTableId: !Ref EdgeFWRouteTable{{x.az|upper}}
       SubnetId: !Ref EdgeFWSubnet{{x.az|upper}}
 
+  EdgeFWDefaultRoute{{x.az|upper}}{{n}}:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref EdgeFWRouteTable{{x.az|upper}}
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGw{{x.az|upper}}
+      
   EdgePubSubnetRouting{{x.az|upper}}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PubRouteTable
+      RouteTableId: !Ref PubRouteTable{{x.az|upper}}
       SubnetId: !Ref EdgePubSubnet{{x.az|upper}}
 
   InternalInspectionTGWRouteTable{{x.az|upper}}:
