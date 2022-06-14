@@ -29,7 +29,7 @@ have overlap with these.
 
 #### Edge VPC 
 
-   * EdgeVpcCidr (default 10.0.0.0/21)
+   * EdgeVpcCidr (default 10.120.0.0/21)
 
 /21 CIDR for edge VPC. This is split to subnets for each AZ for TGW attachments and NAT gateways.
 Here you must ensure the CIDR doesn't overlap with any other networks reachable from TGW.
@@ -106,5 +106,3 @@ Routing change will not cause any significant lost of internet access but it wil
 64 bytes from 8.8.8.8: icmp_seq=326 ttl=53 time=1.25 ms
 64 bytes from 8.8.8.8: icmp_seq=327 ttl=53 time=1.22 ms
 ```
-
-
