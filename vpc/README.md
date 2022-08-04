@@ -154,11 +154,6 @@ to internal subnets. Private NAT is deployed to each subnet when TGW is attached
 _NOTE:_ Default route from internal subnet is always to TGW and access to public
 subnets or IGW is blocked by network access control list (NACL).
 
-_NOTE2:_ TGWAttachement changes will always create a new attachment, even Tags,
-but because there is already attachment in given AZ (Cloudformation will first
-try to create a new before deleting the old) it will fail -> TGW attachment
-can not be changed once it is set :-(
-
 ### Outputs:
 
 |Value |Export |Parameter |
