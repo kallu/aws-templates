@@ -28,6 +28,13 @@ Metadata:
           - EipC
       -
         Label:
+          default: NAT Gateway EIPs
+        Parameters:
+          - EipA
+          - EipB
+          - EipC
+      -
+        Label:
           default: Private subnets
         Parameters:
           - PrivCidrA

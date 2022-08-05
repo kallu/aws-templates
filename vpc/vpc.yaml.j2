@@ -41,6 +41,13 @@ Metadata:
 {%- endfor %}
       -
         Label:
+          default: NAT Gateway EIPs
+        Parameters:
+{%- for x in AZ %}
+          - Eip{{x.az|upper}}
+{%- endfor %}
+      -
+        Label:
           default: Private subnets
         Parameters:
 {%- for x in AZ %}
