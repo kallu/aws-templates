@@ -21,8 +21,11 @@ Metadata:
           default: Public subnets
         Parameters:
           - PubCidrA
+          - EipA
           - PubCidrB
+          - EipB
           - PubCidrC
+          - EipC
       -
         Label:
           default: Private subnets
