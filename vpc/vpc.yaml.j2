@@ -37,7 +37,6 @@ Metadata:
         Parameters:
 {%- for x in AZ %}
           - PubCidr{{x.az|upper}}
-          - Eip{{x.az|upper}}
 {%- endfor %}
       -
         Label:

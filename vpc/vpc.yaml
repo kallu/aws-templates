@@ -21,11 +21,8 @@ Metadata:
           default: Public subnets
         Parameters:
           - PubCidrA
-          - EipA
           - PubCidrB
-          - EipB
           - PubCidrC
-          - EipC
       -
         Label:
           default: NAT Gateway EIPs
