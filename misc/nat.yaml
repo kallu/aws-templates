@@ -1,0 +1,150 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Single AZ VPC with an option to enable/disable NAT gateway
+
+Parameters:
+
+# NAT Gateway and private default route can be enabled/disabled
+# with stack update switching NATstatus parameter.
+
+  NATstatus:
+    Type: String
+    Default: Enabled
+    AllowedValues:
+         - Enabled
+         - Disabled
+
+# If RetainNATip is "Yes", EIP for NAT gateway is retained even when
+# NAT gateway is disabled. When NAT gateway is enabled again, it will
+# get it's original EIP. If parameter is set to "No", then EIP will be
+# deleted with NAT gateway. When NAT gateway is re-enabled, it will get
+# a new EIP.
+#
+# NOTE: Keeping unattached EIP will incur cost even when NAT gateway is deleted.
+
+  RetainNATip:
+    Type: String
+    Default: "Yes"
+    AllowedValues:
+         - "Yes"
+         - "No"
+
+# EIP is created even if NAT is disabled, when RetainNATip = Yes.
+
+Conditions:
+  CreateNAT: !Equals [ !Ref NATstatus, "Enabled" ]
+  CreateEIP: !Or [ !Equals [ !Ref NATstatus, "Enabled" ], !Equals [ !Ref RetainNATip, "Yes" ] ]
+
+Resources:
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: 10.0.0.0/22
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: 
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  InternetGateway:  
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags: 
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      VpcId: !Ref Vpc 
+      InternetGatewayId: !Ref InternetGateway
+
+  # Public subnet and routing for AZ A
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      VpcId: !Ref Vpc
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      Tags: 
+        - Key: Name 
+          Value: !Sub "${AWS::StackName} public subnet"
+
+  PublicRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation 
+    Properties: 
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: 
+        - Key: Name
+          Value: !Sub "${AWS::StackName} public route table"
+
+  PublicRoute: 
+    Type: AWS::EC2::Route  
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # NAT gateway and EIP
+
+  NatGatewayA:
+    Type: AWS::EC2::NatGateway
+    Condition: CreateNAT
+    Properties:
+      AllocationId: !GetAtt NatEipA.AllocationId
+      SubnetId: !Ref PublicSubnetA
+      Tags: 
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  NatEipA:
+    Type: AWS::EC2::EIP
+    Condition: CreateEIP
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  # Private subnet and routing
+
+  PrivateSubnetA: 
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name  
+          Value: !Sub "${AWS::StackName} public subnet"
+
+  PrivateRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTableA
+
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: 
+        - Key: Name
+          Value: !Sub "${AWS::StackName} private route table A"
+
+  PrivateRouteA:
+    Type: AWS::EC2::Route
+    Condition: CreateNAT
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0 
+      NatGatewayId: !Ref NatGatewayA
