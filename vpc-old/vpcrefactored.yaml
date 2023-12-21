@@ -1,0 +1,220 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Simple VPC
+Transform: 'AWS::LanguageExtensions'
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: VPC CIDR
+        Parameters:
+          - VpcIP
+          - VpcMask
+          - AvailabilityZones
+
+Parameters:
+  VpcIP:
+    Type: String
+    Description: VPC IP
+    Default: "10.0.0.0"
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
+    ConstraintDescription: VPC IP must be valid IPv4 address
+
+  VpcMask:
+    Type: String
+    Description: VPC netmask
+    Default: 22
+    AllowedValues: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25 ]
+
+  AvailabilityZones:
+    Type: CommaDelimitedList
+    Description: "Deploy to AZs"
+    Default: "a,b,c"
+    AllowedValues: [a,b,c]
+
+Mappings:
+
+# Split VPC CIDR into 8 blocks and get CIDR of the first block with
+#
+# !Select [0, !Cidr [ !Sub "${VpcIP}/${VpcMask}", 8, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+#
+# NOTE: Inside FindInMap you can use only !Ref and !FindInMap -functions. This is the reason why VpcIP and VpcMask
+# must be separate parameters and can not be extracted from x.x.x.x/yy notation using !Split inside of !FindInMap.
+
+  VpcCidr2Subnet:
+    '16':
+      SubnetBits: 13
+    '17':
+      SubnetBits: 12
+    '18':
+      SubnetBits: 11
+    '19':
+      SubnetBits: 10
+    '20':
+      SubnetBits: 9
+    '21':
+      SubnetBits: 8
+    '22':
+      SubnetBits: 7
+    '23':
+      SubnetBits: 6
+    '24':
+      SubnetBits: 5
+    '25':
+      SubnetBits: 4
+
+  AZ2Subnet:
+    'a':
+      Pub: 0
+      Priv: 3
+    'b':
+      Pub: 1
+      Priv: 4
+    'c':
+      Pub: 2
+      Priv: 5
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Sub "${VpcIP}/${VpcMask}"
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName} IGW'
+
+  InetGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref IGW
+
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public route-table'
+
+  PubDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: IGW
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref IGW
+
+  S3vpcEndpointPublic:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
+      VpcId: !Ref VPC
+      RouteTableIds:
+      - !Ref PubRouteTable
+
+  'Fn::ForEach::AZ':
+    - X
+    - !Ref AvailabilityZones
+    - PubSubnet${X}:
+        Type: AWS::EC2::Subnet
+        Properties:
+          VpcId: !Ref VPC
+          AvailabilityZone: !Sub ${AWS::Region}${X}
+          CidrBlock: !Select [!FindInMap [AZ2Subnet, !Ref X, 'Pub'], !Cidr [ !Sub '${VpcIP}/${VpcMask}', 8, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+          MapPublicIpOnLaunch: true
+          Tags:
+            - Key: Name
+              Value: !Sub '${AWS::StackName} public subnet-${X}'
+
+      S3vpcEndpointPriv${X}:
+        Type: AWS::EC2::VPCEndpoint
+        Properties:
+          ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+          VpcEndpointType: Gateway
+          VpcId: !Ref VPC
+          RouteTableIds:
+          - !Ref
+            Fn::Sub: PrivRouteTable${X}
+
+      PubSubnetRouting${X}:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+          RouteTableId: !Ref PubRouteTable
+          SubnetId: !Ref
+            Fn::Sub: 'PubSubnet${X}'
+
+      NatGw${X}:
+        Type: AWS::EC2::NatGateway
+        Properties:
+          SubnetId: !Ref
+            Fn::Sub: 'PubSubnet${X}'
+          AllocationId: !GetAtt
+            - !Sub NatEip${X}
+            - AllocationId
+          Tags:
+            - Key: Name
+              Value: !Sub '${AWS::StackName} NAT-${X}'
+
+      NatEip${X}:
+        Type: AWS::EC2::EIP
+        # NOTE: In real life you might want to have this if NAT GW EIP is important for you.
+        # DeletionPolicy: RetainExceptOnCreate
+        Properties:
+          Domain: vpc
+
+      PrivSubnet${X}:
+        Type: AWS::EC2::Subnet
+        Properties:
+          VpcId: !Ref VPC
+          AvailabilityZone: !Sub ${AWS::Region}${X}
+          CidrBlock: !Select [!FindInMap [AZ2Subnet, !Ref X, 'Priv'], !Cidr [ !Sub "${VpcIP}/${VpcMask}", 8, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+          MapPublicIpOnLaunch: false
+          Tags:
+            - Key: Name
+              Value: !Sub '${AWS::StackName} private subnet-${X}'
+
+      PrivRouteTable${X}:
+        Type: AWS::EC2::RouteTable
+        Properties: 
+          VpcId: !Ref VPC
+          Tags:
+            - Key: Name
+              Value: !Sub '${AWS::StackName} private route-table-${X}'
+
+      PrivSubnetRouting${X}:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+          RouteTableId: !Ref
+            Fn::Sub: 'PrivRouteTable${X}'
+          SubnetId: !Ref
+            Fn::Sub: 'PrivSubnet${X}'
+
+      PrivDefaultRoute${X}:
+        Type: AWS::EC2::Route
+        DependsOn: !Sub 'NatGw${X}'
+        Properties:
+          RouteTableId: !Ref
+            Fn::Sub: 'PrivRouteTable${X}'
+          DestinationCidrBlock: '0.0.0.0/0'
+          NatGatewayId: !Ref
+            Fn::Sub: 'NatGw${X}'
+
+Outputs:
+
+  VpcId:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VpcId'
