@@ -1,77 +1,58 @@
-
-
-
-
-
----
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Inspection + Edge VPCs v1.0.0
-
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
-      -
-        Label:
+      - Label:
           default: Internal Inspection VPC
         Parameters:
           - InternalInspectionVpcCidr
-      -
-        Label:
+      - Label:
           default: External Inspection VPC
         Parameters:
           - ExternalInspectionVpcCidr
-      -
-        Label:
+      - Label:
           default: Edge VPC
         Parameters:
           - EdgeVpcCidr
           - EipA
           - EipB
           - EipC
-      -
-        Label:
+      - Label:
           default: TGW Configuration
         Parameters:
           - TgwAttachment
           - TgwRouteCidr1
           - TgwRouteCidr2
           - TgwRouteCidr3
-
 Parameters:
-
   EdgeVpcCidr:
     Type: String
     Description: Edge VPC CIDR
-    Default: '10.120.0.0/21'
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    Default: 10.120.0.0/21
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
   EipA:
     Type: String
     Description: Pre-allocated EIP ID for AZ-A (optional)
     Default: ''
-
   EipB:
     Type: String
     Description: Pre-allocated EIP ID for AZ-B (optional)
     Default: ''
-
   EipC:
     Type: String
     Description: Pre-allocated EIP ID for AZ-C (optional)
     Default: ''
-
-
   InternalInspectionVpcCidr:
     Type: String
     Description: Internal Inspection VPC CIDR
-    Default: '100.64.0.0/25'
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-
+    Default: 100.64.0.0/25
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
   ExternalInspectionVpcCidr:
     Type: String
     Description: External Inspection VPC CIDR
-    Default: '100.64.128.0/25'
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-
+    Default: 100.64.128.0/25
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
   TgwAttachment:
     Type: String
     Description: TGW ID attached to VPCs (optional)
@@ -79,31 +60,53 @@ Parameters:
   TgwRouteCidr1:
     Type: String
     Description: CIDR to be routed from Edge to TGW (optional)
-    Default: '157.200.0.0/16'
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+    Default: 157.200.0.0/16
+    AllowedPattern: ^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$
   TgwRouteCidr2:
     Type: String
     Description: CIDR to be routed from Edge to TGW (optional)
-    Default: '10.120.0.0/16'
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
+    Default: 10.120.0.0/16
+    AllowedPattern: ^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$
   TgwRouteCidr3:
     Type: String
     Description: CIDR to be routed from Edge to TGW (optional)
     Default: ''
-    AllowedPattern: "^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$"
-
+    AllowedPattern: ^((([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))/([0-2]?[0-9]|3[0-2])){0,1}$
 Conditions:
-  CreateEipA: !Equals [!Ref EipA, "" ]
-  CreateEipB: !Equals [!Ref EipB, "" ]
-  CreateEipC: !Equals [!Ref EipC, "" ]
-  HasTgwAttachment: !Not [ !Equals [!Ref TgwAttachment, "" ] ]
-  HasTgwRouteCidr1: !Not [ !Equals [!Ref TgwRouteCidr1, "" ] ]
-  AddTgwRoute1: !And [ Condition: HasTgwAttachment, Condition: HasTgwRouteCidr1 ]
-  HasTgwRouteCidr2: !Not [ !Equals [!Ref TgwRouteCidr2, "" ] ]
-  AddTgwRoute2: !And [ Condition: HasTgwAttachment, Condition: HasTgwRouteCidr2 ]
-  HasTgwRouteCidr3: !Not [ !Equals [!Ref TgwRouteCidr3, "" ] ]
-  AddTgwRoute3: !And [ Condition: HasTgwAttachment, Condition: HasTgwRouteCidr3 ]
-  
+  CreateEipA: !Equals
+    - !Ref EipA
+    - ''
+  CreateEipB: !Equals
+    - !Ref EipB
+    - ''
+  CreateEipC: !Equals
+    - !Ref EipC
+    - ''
+  HasTgwAttachment: !Not
+    - !Equals
+      - !Ref TgwAttachment
+      - ''
+  HasTgwRouteCidr1: !Not
+    - !Equals
+      - !Ref TgwRouteCidr1
+      - ''
+  AddTgwRoute1: !And
+    - !Condition HasTgwAttachment
+    - !Condition HasTgwRouteCidr1
+  HasTgwRouteCidr2: !Not
+    - !Equals
+      - !Ref TgwRouteCidr2
+      - ''
+  AddTgwRoute2: !And
+    - !Condition HasTgwAttachment
+    - !Condition HasTgwRouteCidr2
+  HasTgwRouteCidr3: !Not
+    - !Equals
+      - !Ref TgwRouteCidr3
+      - ''
+  AddTgwRoute3: !And
+    - !Condition HasTgwAttachment
+    - !Condition HasTgwRouteCidr3
 Resources:
   InternalInspectionVPC:
     Type: AWS::EC2::VPC
@@ -114,7 +117,7 @@ Resources:
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} InternalInspection VPC'
+          Value: !Sub ${AWS::StackName} InternalInspection VPC
   ExternalInspectionVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -124,7 +127,7 @@ Resources:
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} ExternalInspection VPC'
+          Value: !Sub ${AWS::StackName} ExternalInspection VPC
   EdgeVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -134,21 +137,18 @@ Resources:
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC'
-
+          Value: !Sub ${AWS::StackName} Edge VPC
   InetGW:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
-      - Key: Name
-        Value: !Sub '${AWS::StackName} Edge VPC Internet gateway'
-
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Edge VPC Internet gateway
   InetGWattachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       VpcId: !Ref EdgeVPC
       InternetGatewayId: !Ref InetGW
-
   InternalInspectionTgwAttachment:
     Type: AWS::EC2::TransitGatewayVpcAttachment
     Condition: HasTgwAttachment
@@ -156,13 +156,12 @@ Resources:
       VpcId: !Ref InternalInspectionVPC
       TransitGatewayId: !Ref TgwAttachment
       Tags:
-        - Key: "Name"
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC'
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC
       SubnetIds:
         - !Ref InternalInspectionTGWSubnetA
         - !Ref InternalInspectionTGWSubnetB
         - !Ref InternalInspectionTGWSubnetC
-
   ExternalInspectionTgwAttachment:
     Type: AWS::EC2::TransitGatewayVpcAttachment
     Condition: HasTgwAttachment
@@ -170,13 +169,12 @@ Resources:
       VpcId: !Ref ExternalInspectionVPC
       TransitGatewayId: !Ref TgwAttachment
       Tags:
-        - Key: "Name"
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC'
+        - Key: Name
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC
       SubnetIds:
         - !Ref ExternalInspectionTGWSubnetA
         - !Ref ExternalInspectionTGWSubnetB
         - !Ref ExternalInspectionTGWSubnetC
-
   EdgeTgwAttachment:
     Type: AWS::EC2::TransitGatewayVpcAttachment
     Condition: HasTgwAttachment
@@ -184,35 +182,31 @@ Resources:
       VpcId: !Ref EdgeVPC
       TransitGatewayId: !Ref TgwAttachment
       Tags:
-        - Key: "Name"
-          Value: !Sub '${AWS::StackName} Edge VPC'
+        - Key: Name
+          Value: !Sub ${AWS::StackName} Edge VPC
       SubnetIds:
         - !Ref EdgeTGWSubnetA
         - !Ref EdgeTGWSubnetB
         - !Ref EdgeTGWSubnetC
-
-
   InternalInspectionFwRouteTable:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref InternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} InternalInspection VPC FW route-table'
-
+          Value: !Sub ${AWS::StackName} InternalInspection VPC FW route-table
   InternalInspectionFwDefaultRoute:
     Type: AWS::EC2::Route
     Condition: HasTgwAttachment
     DependsOn: InternalInspectionTgwAttachment
     Properties:
       RouteTableId: !Ref InternalInspectionFwRouteTable
-      DestinationCidrBlock: '0.0.0.0/0'
+      DestinationCidrBlock: 0.0.0.0/0
       TransitGatewayId: !Ref TgwAttachment
-
   InternalInspectionNetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
-      FirewallName: !Sub 'InternalInspection-${AWS::StackName}'
+      FirewallName: !Sub InternalInspection-${AWS::StackName}
       FirewallPolicyArn: !Ref InternalInspectionDefaultFirewallPolicy
       VpcId: !Ref InternalInspectionVPC
       SubnetMappings:
@@ -222,84 +216,87 @@ Resources:
       Description: InternalInspection Network firewall
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} InternalInspection network firewall'
-  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+          Value: !Sub ${AWS::StackName} InternalInspection network firewall
   InternalInspectionTGWRouteA:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InternalInspectionTGWRouteTableA
-      DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt InternalInspectionNetworkFW.EndpointIds ] ] ] ] ]
-  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+      DestinationCidrBlock: 0.0.0.0/0
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'a:'
+              - !Join
+                - ','
+                - !GetAtt InternalInspectionNetworkFW.EndpointIds
   InternalInspectionTGWRouteB:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InternalInspectionTGWRouteTableB
-      DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt InternalInspectionNetworkFW.EndpointIds ] ] ] ] ]
-  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+      DestinationCidrBlock: 0.0.0.0/0
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'b:'
+              - !Join
+                - ','
+                - !GetAtt InternalInspectionNetworkFW.EndpointIds
   InternalInspectionTGWRouteC:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref InternalInspectionTGWRouteTableC
-      DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt InternalInspectionNetworkFW.EndpointIds ] ] ] ] ]
-
+      DestinationCidrBlock: 0.0.0.0/0
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'c:'
+              - !Join
+                - ','
+                - !GetAtt InternalInspectionNetworkFW.EndpointIds
   InternalInspectionDefaultFirewallPolicy:
-    Type: 'AWS::NetworkFirewall::FirewallPolicy'
+    Type: AWS::NetworkFirewall::FirewallPolicy
     Properties:
-      FirewallPolicyName: !Sub "${AWS::StackName}-default-InternalInspection-policy"
+      FirewallPolicyName: !Sub ${AWS::StackName}-default-InternalInspection-policy
       FirewallPolicy:
         StatelessDefaultActions:
-          - 'aws:pass'
+          - aws:pass
         StatelessFragmentDefaultActions:
-          - 'aws:pass'
+          - aws:pass
       Description: Default firewall policy passing everything
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName} default InternalInspection policy"
-
-# ADD DEFAULT POLICY AND RuleGroup
-# Should there be 1 NFW and then fix the cross AZ routing manually?
-
-#  SampleStatefulRulegroup:
-#    Type: 'AWS::NetworkFirewall::RuleGroup'
-#    Properties:
-#      RuleGroupName: SampleStatefulRulegroupName
-#      Type: STATEFUL
-#      RuleGroup:
-#        RulesSource:
-#          RulesString: >-
-#            pass tcp 10.20.20.0/24 45400:45500 <> 10.10.10.0/24 5203
-#            (msg:"test";sid:1;rev:1;)
-#      Capacity: 100
-#      Description: Rulegroup description goes here
-#      Tags:
-#        - Key: Foo
-#          Value: Bar
-
-
+          Value: !Sub ${AWS::StackName} default InternalInspection policy
   ExternalInspectionFwRouteTable:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref ExternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} ExternalInspection VPC FW route-table'
-
+          Value: !Sub ${AWS::StackName} ExternalInspection VPC FW route-table
   ExternalInspectionFwDefaultRoute:
     Type: AWS::EC2::Route
     Condition: HasTgwAttachment
     DependsOn: ExternalInspectionTgwAttachment
     Properties:
       RouteTableId: !Ref ExternalInspectionFwRouteTable
-      DestinationCidrBlock: '0.0.0.0/0'
+      DestinationCidrBlock: 0.0.0.0/0
       TransitGatewayId: !Ref TgwAttachment
-
   ExternalInspectionNetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
-      FirewallName: !Sub 'ExternalInspection-${AWS::StackName}'
+      FirewallName: !Sub ExternalInspection-${AWS::StackName}
       FirewallPolicyArn: !Ref ExternalInspectionDefaultFirewallPolicy
       VpcId: !Ref ExternalInspectionVPC
       SubnetMappings:
@@ -309,68 +306,72 @@ Resources:
       Description: ExternalInspection Network firewall
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} ExternalInspection network firewall'
-  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+          Value: !Sub ${AWS::StackName} ExternalInspection network firewall
   ExternalInspectionTGWRouteA:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref ExternalInspectionTGWRouteTableA
-      DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt ExternalInspectionNetworkFW.EndpointIds ] ] ] ] ]
-  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+      DestinationCidrBlock: 0.0.0.0/0
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'a:'
+              - !Join
+                - ','
+                - !GetAtt ExternalInspectionNetworkFW.EndpointIds
   ExternalInspectionTGWRouteB:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref ExternalInspectionTGWRouteTableB
-      DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt ExternalInspectionNetworkFW.EndpointIds ] ] ] ] ]
-  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+      DestinationCidrBlock: 0.0.0.0/0
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'b:'
+              - !Join
+                - ','
+                - !GetAtt ExternalInspectionNetworkFW.EndpointIds
   ExternalInspectionTGWRouteC:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref ExternalInspectionTGWRouteTableC
-      DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt ExternalInspectionNetworkFW.EndpointIds ] ] ] ] ]
-
+      DestinationCidrBlock: 0.0.0.0/0
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'c:'
+              - !Join
+                - ','
+                - !GetAtt ExternalInspectionNetworkFW.EndpointIds
   ExternalInspectionDefaultFirewallPolicy:
-    Type: 'AWS::NetworkFirewall::FirewallPolicy'
+    Type: AWS::NetworkFirewall::FirewallPolicy
     Properties:
-      FirewallPolicyName: !Sub "${AWS::StackName}-default-ExternalInspection-policy"
+      FirewallPolicyName: !Sub ${AWS::StackName}-default-ExternalInspection-policy
       FirewallPolicy:
         StatelessDefaultActions:
-          - 'aws:pass'
+          - aws:pass
         StatelessFragmentDefaultActions:
-          - 'aws:pass'
+          - aws:pass
       Description: Default firewall policy passing everything
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName} default ExternalInspection policy"
-
-# ADD DEFAULT POLICY AND RuleGroup
-# Should there be 1 NFW and then fix the cross AZ routing manually?
-
-#  SampleStatefulRulegroup:
-#    Type: 'AWS::NetworkFirewall::RuleGroup'
-#    Properties:
-#      RuleGroupName: SampleStatefulRulegroupName
-#      Type: STATEFUL
-#      RuleGroup:
-#        RulesSource:
-#          RulesString: >-
-#            pass tcp 10.20.20.0/24 45400:45500 <> 10.10.10.0/24 5203
-#            (msg:"test";sid:1;rev:1;)
-#      Capacity: 100
-#      Description: Rulegroup description goes here
-#      Tags:
-#        - Key: Foo
-#          Value: Bar
-
-
-
+          Value: !Sub ${AWS::StackName} default ExternalInspection policy
   EdgeNetworkFW:
     Type: AWS::NetworkFirewall::Firewall
     Properties:
-      FirewallName: !Sub 'Edge-${AWS::StackName}'
+      FirewallName: !Sub Edge-${AWS::StackName}
       FirewallPolicyArn: !Ref EdgeDefaultFirewallPolicy
       VpcId: !Ref EdgeVPC
       SubnetMappings:
@@ -380,254 +381,274 @@ Resources:
       Description: Edge Network firewall
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge network firewall'
-  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+          Value: !Sub ${AWS::StackName} Edge network firewall
   EdgeTGWRouteA:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref EdgeTGWRouteTableA
-      DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
-  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+      DestinationCidrBlock: 0.0.0.0/0
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'a:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeTGWRouteB:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref EdgeTGWRouteTableB
-      DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
-  # See https://github.com/aws-cloudformation/aws-cloudformation-resource-providers-networkfirewall/issues/15
+      DestinationCidrBlock: 0.0.0.0/0
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'b:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeTGWRouteC:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref EdgeTGWRouteTableC
-      DestinationCidrBlock: '0.0.0.0/0'
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
-
+      DestinationCidrBlock: 0.0.0.0/0
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'c:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeDefaultFirewallPolicy:
-    Type: 'AWS::NetworkFirewall::FirewallPolicy'
+    Type: AWS::NetworkFirewall::FirewallPolicy
     Properties:
-      FirewallPolicyName: !Sub "${AWS::StackName}-default-Edge-policy"
+      FirewallPolicyName: !Sub ${AWS::StackName}-default-Edge-policy
       FirewallPolicy:
         StatelessDefaultActions:
-          - 'aws:pass'
+          - aws:pass
         StatelessFragmentDefaultActions:
-          - 'aws:pass'
+          - aws:pass
       Description: Default firewall policy passing everything
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName} default Edge policy"
-
-# ADD DEFAULT POLICY AND RuleGroup
-# Should there be 1 NFW and then fix the cross AZ routing manually?
-
-#  SampleStatefulRulegroup:
-#    Type: 'AWS::NetworkFirewall::RuleGroup'
-#    Properties:
-#      RuleGroupName: SampleStatefulRulegroupName
-#      Type: STATEFUL
-#      RuleGroup:
-#        RulesSource:
-#          RulesString: >-
-#            pass tcp 10.20.20.0/24 45400:45500 <> 10.10.10.0/24 5203
-#            (msg:"test";sid:1;rev:1;)
-#      Capacity: 100
-#      Description: Rulegroup description goes here
-#      Tags:
-#        - Key: Foo
-#          Value: Bar
-
+          Value: !Sub ${AWS::StackName} default Edge policy
   EdgeTGWSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 0 , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
+      CidrBlock: !Select
+        - 0
+        - !Cidr
+          - !Ref EdgeVpcCidr
+          - 16
+          - 7
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC TGW subnet-A'
-
+          Value: !Sub ${AWS::StackName} Edge VPC TGW subnet-A
   EdgeFWSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 4 , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
+      CidrBlock: !Select
+        - 4
+        - !Cidr
+          - !Ref EdgeVpcCidr
+          - 16
+          - 7
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Firewall subnet-A'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Firewall subnet-A
   EdgePubSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 4 , !Cidr [ !Ref EdgeVpcCidr, 8, 8 ] ]
+      CidrBlock: !Select
+        - 4
+        - !Cidr
+          - !Ref EdgeVpcCidr
+          - 8
+          - 8
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Public subnet-A'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Public subnet-A
   InternalInspectionTGWSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 0 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 0
+        - !Cidr
+          - !Ref InternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW subnet-A'
-
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC TGW subnet-A
   InternalInspectionFWSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 4 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 4
+        - !Cidr
+          - !Ref InternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC FW subnet-A'
-
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC FW subnet-A
   ExternalInspectionTGWSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref ExternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 0 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 0
+        - !Cidr
+          - !Ref ExternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW subnet-A'
-
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC TGW subnet-A
   ExternalInspectionFWSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref ExternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}a
-      CidrBlock: !Select [ 4 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 4
+        - !Cidr
+          - !Ref ExternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC FW subnet-A'
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC FW subnet-A
   NatGwA:
     Type: AWS::EC2::NatGateway
     Properties:
       ConnectivityType: public
       SubnetId: !Ref EdgePubSubnetA
-      AllocationId: !If [ CreateEipA, !GetAtt NatEipA.AllocationId, !Ref EipA ]
+      AllocationId: !If
+        - CreateEipA
+        - !GetAtt NatEipA.AllocationId
+        - !Ref EipA
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC NAT-A'
-
+          Value: !Sub ${AWS::StackName} Edge VPC NAT-A
   NatEipA:
     Type: AWS::EC2::EIP
-    # DeletionPolicy: Retain
-    # UpdateReplacePolicy: Retain
     Condition: CreateEipA
     Properties:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC NAT-A'
-
+          Value: !Sub ${AWS::StackName} Edge VPC NAT-A
   EdgeTGWRouteTableA:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC TGW route-table-A'
-
+          Value: !Sub ${AWS::StackName} Edge VPC TGW route-table-A
   EdgeTGWSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref EdgeTGWRouteTableA
       SubnetId: !Ref EdgeTGWSubnetA
-
   EdgeFWRouteTableA:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Firewall route-table-A'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Firewall route-table-A
   EdgeFWSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref EdgeFWRouteTableA
       SubnetId: !Ref EdgeFWSubnetA
-
   EdgeFWDefaultRouteA:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref EdgeFWRouteTableA
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NatGwA
-      
   EdgePubSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTableA
       SubnetId: !Ref EdgePubSubnetA
-
   InternalInspectionTGWRouteTableA:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref InternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW route-table-A'
-
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC TGW route-table-A
   InspectionTGWSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref InternalInspectionTGWRouteTableA
       SubnetId: !Ref InternalInspectionTGWSubnetA
-
   InspectionTGWSFWRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref InternalInspectionFwRouteTable
       SubnetId: !Ref InternalInspectionFWSubnetA
-
   ExternalInspectionTGWRouteTableA:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref ExternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW route-table-A'
-
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC TGW route-table-A
   ExternalInspectionTGWSubnetRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref ExternalInspectionTGWRouteTableA
       SubnetId: !Ref ExternalInspectionTGWSubnetA
-
   ExternalInspectionTGWSFWRoutingA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref ExternalInspectionFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnetA
-
-
   PubRouteTableA:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Public route-table-A'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Public route-table-A
   PubDefaultRouteA:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PubRouteTableA
-      DestinationCidrBlock: '0.0.0.0/0'
+      DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InetGW
   EdgeFWRouteA1:
     Type: AWS::EC2::Route
@@ -637,14 +658,23 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr1
       TransitGatewayId: !Ref TgwAttachment
-
   EdgePubRouteA1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
     Properties:
       RouteTableId: !Ref PubRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr1
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'a:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeFWRouteA2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
@@ -653,14 +683,23 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr2
       TransitGatewayId: !Ref TgwAttachment
-
   EdgePubRouteA2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
     Properties:
       RouteTableId: !Ref PubRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr2
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'a:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeFWRouteA3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
@@ -669,206 +708,229 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
-
   EdgePubRouteA3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
     Properties:
       RouteTableId: !Ref PubRouteTableA
       DestinationCidrBlock: !Ref TgwRouteCidr3
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'a:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'a:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeTGWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 1 , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
+      CidrBlock: !Select
+        - 1
+        - !Cidr
+          - !Ref EdgeVpcCidr
+          - 16
+          - 7
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC TGW subnet-B'
-
+          Value: !Sub ${AWS::StackName} Edge VPC TGW subnet-B
   EdgeFWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 5 , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
+      CidrBlock: !Select
+        - 5
+        - !Cidr
+          - !Ref EdgeVpcCidr
+          - 16
+          - 7
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Firewall subnet-B'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Firewall subnet-B
   EdgePubSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 5 , !Cidr [ !Ref EdgeVpcCidr, 8, 8 ] ]
+      CidrBlock: !Select
+        - 5
+        - !Cidr
+          - !Ref EdgeVpcCidr
+          - 8
+          - 8
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Public subnet-B'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Public subnet-B
   InternalInspectionTGWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 1 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 1
+        - !Cidr
+          - !Ref InternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW subnet-B'
-
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC TGW subnet-B
   InternalInspectionFWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 5 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 5
+        - !Cidr
+          - !Ref InternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC FW subnet-B'
-
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC FW subnet-B
   ExternalInspectionTGWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref ExternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 1 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 1
+        - !Cidr
+          - !Ref ExternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW subnet-B'
-
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC TGW subnet-B
   ExternalInspectionFWSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref ExternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}b
-      CidrBlock: !Select [ 5 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 5
+        - !Cidr
+          - !Ref ExternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC FW subnet-B'
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC FW subnet-B
   NatGwB:
     Type: AWS::EC2::NatGateway
     Properties:
       ConnectivityType: public
       SubnetId: !Ref EdgePubSubnetB
-      AllocationId: !If [ CreateEipB, !GetAtt NatEipB.AllocationId, !Ref EipB ]
+      AllocationId: !If
+        - CreateEipB
+        - !GetAtt NatEipB.AllocationId
+        - !Ref EipB
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC NAT-B'
-
+          Value: !Sub ${AWS::StackName} Edge VPC NAT-B
   NatEipB:
     Type: AWS::EC2::EIP
-    # DeletionPolicy: Retain
-    # UpdateReplacePolicy: Retain
     Condition: CreateEipB
     Properties:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC NAT-B'
-
+          Value: !Sub ${AWS::StackName} Edge VPC NAT-B
   EdgeTGWRouteTableB:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC TGW route-table-B'
-
+          Value: !Sub ${AWS::StackName} Edge VPC TGW route-table-B
   EdgeTGWSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref EdgeTGWRouteTableB
       SubnetId: !Ref EdgeTGWSubnetB
-
   EdgeFWRouteTableB:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Firewall route-table-B'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Firewall route-table-B
   EdgeFWSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref EdgeFWRouteTableB
       SubnetId: !Ref EdgeFWSubnetB
-
   EdgeFWDefaultRouteB:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref EdgeFWRouteTableB
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NatGwB
-      
   EdgePubSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTableB
       SubnetId: !Ref EdgePubSubnetB
-
   InternalInspectionTGWRouteTableB:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref InternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW route-table-B'
-
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC TGW route-table-B
   InspectionTGWSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref InternalInspectionTGWRouteTableB
       SubnetId: !Ref InternalInspectionTGWSubnetB
-
   InspectionTGWSFWRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref InternalInspectionFwRouteTable
       SubnetId: !Ref InternalInspectionFWSubnetB
-
   ExternalInspectionTGWRouteTableB:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref ExternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW route-table-B'
-
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC TGW route-table-B
   ExternalInspectionTGWSubnetRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref ExternalInspectionTGWRouteTableB
       SubnetId: !Ref ExternalInspectionTGWSubnetB
-
   ExternalInspectionTGWSFWRoutingB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref ExternalInspectionFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnetB
-
-
   PubRouteTableB:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Public route-table-B'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Public route-table-B
   PubDefaultRouteB:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PubRouteTableB
-      DestinationCidrBlock: '0.0.0.0/0'
+      DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InetGW
   EdgeFWRouteB1:
     Type: AWS::EC2::Route
@@ -878,14 +940,23 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr1
       TransitGatewayId: !Ref TgwAttachment
-
   EdgePubRouteB1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
     Properties:
       RouteTableId: !Ref PubRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr1
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'b:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeFWRouteB2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
@@ -894,14 +965,23 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr2
       TransitGatewayId: !Ref TgwAttachment
-
   EdgePubRouteB2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
     Properties:
       RouteTableId: !Ref PubRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr2
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'b:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeFWRouteB3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
@@ -910,206 +990,229 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
-
   EdgePubRouteB3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
     Properties:
       RouteTableId: !Ref PubRouteTableB
       DestinationCidrBlock: !Ref TgwRouteCidr3
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'b:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'b:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeTGWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 2 , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
+      CidrBlock: !Select
+        - 2
+        - !Cidr
+          - !Ref EdgeVpcCidr
+          - 16
+          - 7
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC TGW subnet-C'
-
+          Value: !Sub ${AWS::StackName} Edge VPC TGW subnet-C
   EdgeFWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 6 , !Cidr [ !Ref EdgeVpcCidr, 16, 7 ] ]
+      CidrBlock: !Select
+        - 6
+        - !Cidr
+          - !Ref EdgeVpcCidr
+          - 16
+          - 7
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Firewall subnet-C'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Firewall subnet-C
   EdgePubSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref EdgeVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 6 , !Cidr [ !Ref EdgeVpcCidr, 8, 8 ] ]
+      CidrBlock: !Select
+        - 6
+        - !Cidr
+          - !Ref EdgeVpcCidr
+          - 8
+          - 8
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Public subnet-C'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Public subnet-C
   InternalInspectionTGWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 2 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 2
+        - !Cidr
+          - !Ref InternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW subnet-C'
-
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC TGW subnet-C
   InternalInspectionFWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref InternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 6 , !Cidr [ !Ref InternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 6
+        - !Cidr
+          - !Ref InternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC FW subnet-C'
-
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC FW subnet-C
   ExternalInspectionTGWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref ExternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 2 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 2
+        - !Cidr
+          - !Ref ExternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW subnet-C'
-
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC TGW subnet-C
   ExternalInspectionFWSubnetC:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref ExternalInspectionVPC
       AvailabilityZone: !Sub ${AWS::Region}c
-      CidrBlock: !Select [ 6 , !Cidr [ !Ref ExternalInspectionVpcCidr, 8, 4 ] ]
+      CidrBlock: !Select
+        - 6
+        - !Cidr
+          - !Ref ExternalInspectionVpcCidr
+          - 8
+          - 4
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC FW subnet-C'
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC FW subnet-C
   NatGwC:
     Type: AWS::EC2::NatGateway
     Properties:
       ConnectivityType: public
       SubnetId: !Ref EdgePubSubnetC
-      AllocationId: !If [ CreateEipC, !GetAtt NatEipC.AllocationId, !Ref EipC ]
+      AllocationId: !If
+        - CreateEipC
+        - !GetAtt NatEipC.AllocationId
+        - !Ref EipC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC NAT-C'
-
+          Value: !Sub ${AWS::StackName} Edge VPC NAT-C
   NatEipC:
     Type: AWS::EC2::EIP
-    # DeletionPolicy: Retain
-    # UpdateReplacePolicy: Retain
     Condition: CreateEipC
     Properties:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC NAT-C'
-
+          Value: !Sub ${AWS::StackName} Edge VPC NAT-C
   EdgeTGWRouteTableC:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC TGW route-table-C'
-
+          Value: !Sub ${AWS::StackName} Edge VPC TGW route-table-C
   EdgeTGWSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref EdgeTGWRouteTableC
       SubnetId: !Ref EdgeTGWSubnetC
-
   EdgeFWRouteTableC:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Firewall route-table-C'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Firewall route-table-C
   EdgeFWSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref EdgeFWRouteTableC
       SubnetId: !Ref EdgeFWSubnetC
-
   EdgeFWDefaultRouteC:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref EdgeFWRouteTableC
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NatGwC
-      
   EdgePubSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PubRouteTableC
       SubnetId: !Ref EdgePubSubnetC
-
   InternalInspectionTGWRouteTableC:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref InternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Internal Inspection VPC TGW route-table-C'
-
+          Value: !Sub ${AWS::StackName} Internal Inspection VPC TGW route-table-C
   InspectionTGWSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref InternalInspectionTGWRouteTableC
       SubnetId: !Ref InternalInspectionTGWSubnetC
-
   InspectionTGWSFWRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref InternalInspectionFwRouteTable
       SubnetId: !Ref InternalInspectionFWSubnetC
-
   ExternalInspectionTGWRouteTableC:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref ExternalInspectionVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} On-Prem Inspection VPC TGW route-table-C'
-
+          Value: !Sub ${AWS::StackName} On-Prem Inspection VPC TGW route-table-C
   ExternalInspectionTGWSubnetRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref ExternalInspectionTGWRouteTableC
       SubnetId: !Ref ExternalInspectionTGWSubnetC
-
   ExternalInspectionTGWSFWRoutingC:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref ExternalInspectionFwRouteTable
       SubnetId: !Ref ExternalInspectionFWSubnetC
-
-
   PubRouteTableC:
     Type: AWS::EC2::RouteTable
-    Properties: 
+    Properties:
       VpcId: !Ref EdgeVPC
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName} Edge VPC Public route-table-C'
-
+          Value: !Sub ${AWS::StackName} Edge VPC Public route-table-C
   PubDefaultRouteC:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PubRouteTableC
-      DestinationCidrBlock: '0.0.0.0/0'
+      DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InetGW
   EdgeFWRouteC1:
     Type: AWS::EC2::Route
@@ -1119,14 +1222,23 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr1
       TransitGatewayId: !Ref TgwAttachment
-
   EdgePubRouteC1:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute1
     Properties:
       RouteTableId: !Ref PubRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr1
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'c:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeFWRouteC2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
@@ -1135,14 +1247,23 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr2
       TransitGatewayId: !Ref TgwAttachment
-
   EdgePubRouteC2:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute2
     Properties:
       RouteTableId: !Ref PubRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr2
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'c:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
   EdgeFWRouteC3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
@@ -1151,28 +1272,36 @@ Resources:
       RouteTableId: !Ref EdgeFWRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr3
       TransitGatewayId: !Ref TgwAttachment
-
   EdgePubRouteC3:
     Type: AWS::EC2::Route
     Condition: AddTgwRoute3
     Properties:
       RouteTableId: !Ref PubRouteTableC
       DestinationCidrBlock: !Ref TgwRouteCidr3
-      VpcEndpointId: !Select [ 0, !Split [ ',', !Select [ 1 , !Split [ 'c:', !Join [ ',', !GetAtt EdgeNetworkFW.EndpointIds ] ] ] ] ]
-
+      VpcEndpointId: !Select
+        - 0
+        - !Split
+          - ','
+          - !Select
+            - 1
+            - !Split
+              - 'c:'
+              - !Join
+                - ','
+                - !GetAtt EdgeNetworkFW.EndpointIds
 Outputs:
   InternalInspectionVpcId:
     Description: VPC ID
     Value: !Ref InternalInspectionVPC
     Export:
-      Name: !Sub '${AWS::StackName}-InternalInspectionVpcId'
+      Name: !Sub ${AWS::StackName}-InternalInspectionVpcId
   ExternalInspectionVpcId:
     Description: VPC ID
     Value: !Ref ExternalInspectionVPC
     Export:
-      Name: !Sub '${AWS::StackName}-ExternalInspectionVpcId'
+      Name: !Sub ${AWS::StackName}-ExternalInspectionVpcId
   EdgeVpcId:
     Description: VPC ID
     Value: !Ref EdgeVPC
     Export:
-      Name: !Sub '${AWS::StackName}-EdgeVpcId'
+      Name: !Sub ${AWS::StackName}-EdgeVpcId

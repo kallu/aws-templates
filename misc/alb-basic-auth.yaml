@@ -1,0 +1,253 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: ALB with HTTP Basic Auth
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "ALB Configuration"
+        Parameters:
+          - VPCID
+          - Subnets
+          - R53Zone
+          - R53ZoneId
+      -
+        Label:
+          default: "HTTP Basic Auth"
+        Parameters:
+          - Username
+          - Password
+          - AuthPath
+
+Parameters:
+
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC to deploy ALB
+
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Public Subnets (min 2) from VPC
+
+  R53Zone:
+    Type: String
+    Description: R53 Domain for ALB DNS entry
+    Default: carriagereturn.nl
+
+  R53ZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: R53 Domain ID for ALB DNS entry
+    Default: Z33QVR4S16MSXY
+
+  Username:
+    Type: String
+    Description: Username for basic auth
+    Default: foo
+
+  # NOTE: I don't even pretend this to be safe and use NoEcho or parameter store
+  #       as you can always find base64 encoded password from ALB config, and in
+  #       clear text in Lambda function environment.
+
+  Password:
+    Type: String
+    Description: Password for basic auth
+    Default: bar
+
+  # URLs with AuthPath/* prefix are authenticated to show "Welcome!"
+  # All other URLs will show unauthenticated content "Hello World!"
+
+  AuthPath:
+    Type: String
+    Description: Authenticated URL prefix
+    Default: /auth
+
+Rules:
+
+  SubnetsInVPC:
+    Assertions:
+    - Assert:
+        Fn::EachMemberIn:
+        - Fn::ValueOf:
+          - Subnets
+          - VpcId
+        - 
+          - !Ref VPCID
+      AssertDescription: All subnets must be within the given VPC
+
+Outputs:
+
+  URL:
+    Description: ALB URL
+    Value: !Sub 'https://${AWS::StackName}.${R53Zone}/'
+
+Resources:
+
+  R53Record:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt ALB.CanonicalHostedZoneID
+        DNSName: !GetAtt ALB.DNSName
+      Comment: !Sub '${AWS::StackName} ALB alias'
+      HostedZoneId: !Ref R53ZoneId
+      Name: !Sub '${AWS::StackName}.${R53Zone}.'
+
+  SSLCert:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub '${AWS::StackName}.${R53Zone}'
+      DomainValidationOptions: 
+        - DomainName: !Sub '${AWS::StackName}.${R53Zone}'
+          HostedZoneId: !Ref R53ZoneId
+      ValidationMethod: DNS
+
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Scheme: internet-facing
+      Subnets: !Ref Subnets
+      SecurityGroups: 
+        - !Ref ALBSecGroup
+
+  ALBSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: !Sub "${AWS::StackName} ALB, allow port 443 from 0.0.0.0/0"
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          FromPort: 443
+          ToPort: 443
+          IpProtocol: tcp
+      VpcId: !Ref VPCID
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      DefaultActions: 
+        - Type: fixed-response
+          Order: 1
+          FixedResponseConfig:
+            ContentType: text/html
+            StatusCode: 200
+            MessageBody: "<html><title>Hello</title><body><h1>Hello World!</h1></body></html>"
+      LoadBalancerArn: !Ref ALB
+      Port: 443
+      Protocol: HTTPS
+      Certificates: 
+        - CertificateArn: !Ref SSLCert
+
+  Authenticated:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            ContentType: text/html
+            StatusCode: 200
+            MessageBody: "<html><title>Hello</title><body><h1>Welcome!</h1></body></html>"
+      Conditions:
+        - Field: http-header
+          HttpHeaderConfig:
+            HttpHeaderName: Authorization
+            Values: 
+              - !Join [ ' ', [ 'Basic', Fn::Base64: !Sub '${Username}:${Password}' ] ]   
+        - Field: path-pattern
+          PathPatternConfig:
+            Values:
+              - !Sub "${AuthPath}/*"
+      ListenerArn: !Ref Listener
+      Priority: 100
+
+  BasicAuth:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref BasicAuthTargetGroup
+                Weight: 1
+      Conditions:
+        - Field: path-pattern
+          PathPatternConfig:
+            Values:
+              - !Sub "${AuthPath}/*"
+      ListenerArn: !Ref Listener
+      Priority: 200
+
+  LambdaExecPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt BasicAuthFunc.Arn
+      Principal: elasticloadbalancing.amazonaws.com
+
+  BasicAuthTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties: 
+      TargetType: lambda
+      Targets:
+        - Id: !GetAtt BasicAuthFunc.Arn
+  
+  BasicAuthFunc:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Runtime: python3.12
+      Timeout: 30
+      Handler: index.lambda_handler
+      Description: HTTP Basic Auth
+      MemorySize: 128
+      Environment:
+        Variables:
+          USERNAME: !Ref Username
+          PASSWORD: !Ref Password
+      InlineCode: |
+        import os
+        import base64
+        import json
+        import urllib.request
+
+        def lambda_handler(event, context):
+          # Get username and password from environment
+          username = os.environ['USERNAME']
+          password = os.environ['PASSWORD']
+
+          # Get authorization header
+          headers = event['headers']
+          auth_header = headers.get('authorization', '')
+
+          # Validate credentials
+          if auth_header.startswith('Basic '):
+            auth_base64 = auth_header.split(' ')[1]
+            auth_decoded = base64.b64decode(auth_base64).decode('utf-8')
+            user, pwd = auth_decoded.split(':')
+        
+            if user == username and pwd == password:
+              # Authentication successful
+              return {
+                'statusCode': 302,
+                'statusDescription': '302 Redirect',
+                'isBase64Encoded': False,
+                'headers': {
+                  'Content-Type': 'text/plain',
+                  'Location': '/auth/'
+                },
+                'body': ''
+              }
+
+          # Request Basic Authentication if failed or no header
+          return {
+            'statusCode': 401,
+            'statusDescription': '401 Unauthorized',
+            'isBase64Encoded': False,
+            'headers': {
+              'WWW-Authenticate': 'Basic realm="User Visible Realm"',
+              'Content-Type': 'text/plain'
+            },
+            'body': 'Unauthorized'
+          }
