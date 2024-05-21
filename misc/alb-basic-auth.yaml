@@ -235,7 +235,7 @@ Resources:
                 'isBase64Encoded': False,
                 'headers': {
                   'Content-Type': 'text/plain',
-                  'Location': '/auth/'
+                  'Location': event['path']
                 },
                 'body': ''
               }
