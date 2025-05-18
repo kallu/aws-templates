@@ -1,0 +1,45 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 2 VPCs using ForEach
+Transform: 'AWS::LanguageExtensions'
+
+# Split VPC CIDR into 4 blocks and get CIDR of the first block with
+#
+# !Select [0, !Cidr [ !Sub "${VpcIP}/${VpcMask}", 4, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+#
+# NOTE: Inside FindInMap you can use only !Ref and !FindInMap -functions. This is the reason why VpcIP and VpcMask
+# must be separate parameters and can not be extracted from x.x.x.x/yy notation using !Split inside of !FindInMap.
+#
+# NOTE: While it would have been nice to replace this with ForEach, it can be used only in Conditions, Resources
+# and Outputs sections of template :-(
+
+
+# Template format error: Unresolved resource dependencies [X] in the Resources block of the template
+
+Resources:
+
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+
+
+  'Fn::ForEach::Network':
+  - X
+  - [ a ]
+  - Subnet${X}:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref MyVPC
+        CidrBlock: 10.0.0.0/24
+        AvailabilityZone : !Sub "${AWS::Region}${X}"
+        Tags:
+          - Key: Name
+            Value: !Sub '${AWS::StackName} VPC ${X}'
+
+# Resource handler returned message: "Value (eu-central-1A) for parameter availabilityZone is invalid.
+
+# If you're substituting only template parameters, resource logical IDs, or resource attributes in the String parameter, don't specify a variable map.
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-sub.html
+
+

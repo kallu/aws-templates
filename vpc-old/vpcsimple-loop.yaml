@@ -1,0 +1,271 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Simple VPC using Fn::ForEach
+Transform: 'AWS::LanguageExtensions'
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: VPC CIDR
+        Parameters:
+          - VpcIP
+          - VpcMask
+
+Parameters:
+  VpcIP:
+    Type: String
+    Description: VPC IP
+    Default: "10.0.0.0"
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
+    ConstraintDescription: VPC IP must be valid IPv4 address
+
+  VpcMask:
+    Type: String
+    Description: VPC netmask
+    Default: 22
+    AllowedValues: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+
+Mappings:
+
+# Split VPC CIDR into 4 blocks and get CIDR of the first block with
+#
+# !Select [0, !Cidr [ !Sub "${VpcIP}/${VpcMask}", 4, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+#
+# NOTE: Inside FindInMap you can use only !Ref and !FindInMap -functions. This is the reason why VpcIP and VpcMask
+# must be separate parameters and can not be extracted from x.x.x.x/yy notation using !Split inside of !FindInMap.
+#
+# NOTE: While it would have been nice to replace this with ForEach, it can be used only in Conditions, Resources
+# and Outputs sections of template :-(
+
+  VpcCidr2Subnet:
+    "16":
+      SubnetBits: "14"
+    "17":
+      SubnetBits: "13"
+    "18":
+      SubnetBits: "12"
+    "19":
+      SubnetBits: "11"
+    "20":
+      SubnetBits: "10"
+    "21":
+      SubnetBits: "9"
+    "22":
+      SubnetBits: "8"
+    "23":
+      SubnetBits: "7"
+    "24":
+      SubnetBits: "6"
+    "25":
+      SubnetBits: "5"
+    "26":
+      SubnetBits: "4"
+
+  Subnet2CidrIndex:
+    "PubA":
+      Index: "0"
+    "PubB":
+      Index: "1"
+    "PrivA":
+      Index: "2"
+    "PrivB":
+      Index: "3"
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Sub "${VpcIP}/${VpcMask}"
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+
+  InetGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName} Inet-GW'
+
+  InetGWattachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InetGW
+
+  InternalDnsZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      VPCs:
+        - VPCId: !Ref VPC
+          VPCRegion: !Ref AWS::Region
+      Name: vpc.internal
+      HostedZoneConfig:
+        Comment: !Sub '${AWS::StackName} @ ${AWS::Region} internal zone'
+
+  S3vpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
+      VpcId: !Ref VPC
+      RouteTableIds:
+      - !Ref PubRouteTable
+      - !Ref PrivRouteTableA
+      - !Ref PrivRouteTableB
+
+  NatGwA:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      SubnetId: !Ref PubSubnetA
+      AllocationId: !GetAtt NatEipA.AllocationId
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NAT-A'
+
+  NatEipA:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  PubRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} public route-table'
+
+  PubDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InetGW
+    Properties:
+      RouteTableId: !Ref PubRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InetGW
+
+  'Fn::ForEach::AZ':
+  - AZID
+  - [ A, B ]
+  - PrivSubnet${AZID}:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref VPC
+        AvailabilityZone: !Sub "${AWS::Region}${AZID}"
+        CidrBlock: !Select [ !FindInMap [Subnet2CidrIndex, !Sub "Priv${AZID}", 'Index' ], !Cidr [ !Sub "${VpcIP}/${VpcMask}", 4, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+        MapPublicIpOnLaunch: false
+        Tags:
+          - Key: Name
+            Value: !Sub '${AWS::StackName} private subnet-${AZID}'
+
+    PrivRouteTable${AZID}:
+      Type: AWS::EC2::RouteTable
+      Properties: 
+        VpcId: !Ref VPC
+        Tags:
+          - Key: Name
+            Value: !Sub '${AWS::StackName} private route-table-${AZID}'
+
+    PrivSubnetRouting${AZID}:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId: !Ref
+          Fn::Sub: PrivRouteTable${AZID}
+        SubnetId: !Ref
+          Fn::Sub: PrivSubnet${AZID}
+
+    PrivDefaultRoute${AZID}:
+      Type: AWS::EC2::Route
+      DependsOn: NatGwA
+      Properties:
+        RouteTableId: !Ref 
+          Fn::Sub: PrivRouteTable${AZID}
+        DestinationCidrBlock: '0.0.0.0/0'
+        NatGatewayId: !Ref NatGwA
+
+    PubSubnet${AZID}:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref VPC
+        AvailabilityZone: !Sub "${AWS::Region}${AZID}"
+        CidrBlock: !Select [ !FindInMap [Subnet2CidrIndex, !Sub "Pub${AZID}", 'Index' ], !Cidr [ !Sub "${VpcIP}/${VpcMask}", 4, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+        MapPublicIpOnLaunch: true
+        Tags:
+          - Key: Name
+            Value: !Sub '${AWS::StackName} public subnet-${AZID}'
+
+    PubSubnetRouting${AZID}:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId: !Ref PubRouteTable
+        SubnetId: !Ref 
+          Fn::Sub: PubSubnet${AZID} 
+
+  ParamStoreVpcId:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/vpcid'
+      Description: !Sub '${AWS::StackName} VPC ID' 
+      Type: 'String'
+      Value: !Ref VPC
+
+  ParamStoreVpcZoneId:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/r53zoneid'
+      Description: !Sub '${AWS::StackName} Internal R53 Zone ID'
+      Type: 'String'
+      Value: !Ref InternalDnsZone
+
+  ParamStorePubSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/pubsubnets'
+      Description: !Sub '${AWS::StackName} public subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB}'
+        - { subnetA: !Ref PubSubnetA, subnetB: !Ref PubSubnetB }
+
+  ParamStorePrivSubnets:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Sub '/cloudformation/${AWS::StackName}/privsubnets'
+      Description: !Sub '${AWS::StackName} private subnets'
+      Type: 'StringList'
+      Value: !Sub
+        - '${subnetA},${subnetB}'
+        - { subnetA: !Ref PrivSubnetA, subnetB: !Ref PrivSubnetB }
+
+Outputs:
+
+  VpcId:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VpcId'
+
+  R53ZoneId:
+    Description: R53 internal zone ID
+    Value: !Ref InternalDnsZone
+    Export: 
+      Name: !Sub '${AWS::StackName}-R53ZoneId'
+
+  PubSubnets:
+    Description: Public Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB}'
+      - { subnetA: !Ref PubSubnetA, subnetB: !Ref PubSubnetB }
+    Export:
+      Name: !Sub '${AWS::StackName}-PubSubnets'
+
+  PrivSubnets:
+    Description: Private Subnets
+    Value: !Sub
+      - '${subnetA},${subnetB}'
+      - { subnetA: !Ref PrivSubnetA, subnetB: !Ref PrivSubnetB }
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivSubnets'

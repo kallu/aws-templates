@@ -1,0 +1,21 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 2 VPCs using ForEach
+Transform: 'AWS::LanguageExtensions'
+
+Resources:
+
+ 'Fn::ForEach::Network':
+  - X
+  - [ a, b ]
+  - VPC${X}:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 10.0.0.0/16
+        Tags:
+          - Key: Name
+            # This works
+            # Value: !Sub '${AWS::Region} VPC ${X}'
+            #
+            # But this fails with error "Unresolved resource dependencies [X] in the Resources block of the template"
+            Value: !Sub '${AWS::StackName} VPC ${X}'
