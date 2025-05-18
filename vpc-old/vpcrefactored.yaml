@@ -8,25 +8,18 @@ Metadata:
     ParameterGroups:
       -
         Label:
-          default: VPC CIDR
+          default: VPC Configuration
         Parameters:
-          - VpcIP
-          - VpcMask
+          - VpcCIDR
           - AvailabilityZones
 
 Parameters:
-  VpcIP:
+  VpcCIDR:
     Type: String
-    Description: VPC IP
-    Default: "10.0.0.0"
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
-    ConstraintDescription: VPC IP must be valid IPv4 address
-
-  VpcMask:
-    Type: String
-    Description: VPC netmask
-    Default: 22
-    AllowedValues: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25 ]
+    Description: VPC CIDR
+    Default: "10.0.0.0/22"
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/(1[6-9]|2[0-5])$"
+    ConstraintDescription: VPC IP must be valid IPv4 CIDR with mask 16-25
 
   AvailabilityZones:
     Type: CommaDelimitedList
@@ -38,9 +31,13 @@ Mappings:
 
 # Split VPC CIDR into 8 blocks and get CIDR of the first block with
 #
-# !Select [0, !Cidr [ !Sub "${VpcIP}/${VpcMask}", 8, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+# !Select [0, !Cidr [ !Ref VpcCIDR", 8, !FindInMap [VpcCidr2Subnet, !Select [1, !Split ['/', !Ref VpcCIDR]], 'SubnetBits']]]
+# 
+# NOTE: Since Jan 2023 below constraint isn't true when using AWS::LanguageExtensions transform.
+#       This allows us to enter VPC CIDR as single parameter x.x.x.x/yy instead having one for IP and another for mask.
+#       See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-findinmap-enhancements.html
 #
-# NOTE: Inside FindInMap you can use only !Ref and !FindInMap -functions. This is the reason why VpcIP and VpcMask
+# OBSOLETE NOTE: Inside FindInMap you can use only !Ref and !FindInMap -functions. This is the reason why VpcIP and VpcMask
 # must be separate parameters and can not be extracted from x.x.x.x/yy notation using !Split inside of !FindInMap.
 
   VpcCidr2Subnet:
@@ -81,10 +78,13 @@ Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Sub "${VpcIP}/${VpcMask}"
+      CidrBlock: !Ref VpcCIDR
       EnableDnsSupport: true
       EnableDnsHostnames: true
       InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
 
   IGW:
     Type: AWS::EC2::InternetGateway
@@ -132,7 +132,7 @@ Resources:
         Properties:
           VpcId: !Ref VPC
           AvailabilityZone: !Sub ${AWS::Region}${X}
-          CidrBlock: !Select [!FindInMap [AZ2Subnet, !Ref X, 'Pub'], !Cidr [ !Sub '${VpcIP}/${VpcMask}', 8, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+          CidrBlock: !Select [!FindInMap [AZ2Subnet, !Ref X, 'Pub'], !Cidr [ !Ref VpcCIDR, 8, !FindInMap [VpcCidr2Subnet, !Select [1, !Split ['/', !Ref VpcCIDR]], 'SubnetBits']]]
           MapPublicIpOnLaunch: true
           Tags:
             - Key: Name
@@ -179,7 +179,7 @@ Resources:
         Properties:
           VpcId: !Ref VPC
           AvailabilityZone: !Sub ${AWS::Region}${X}
-          CidrBlock: !Select [!FindInMap [AZ2Subnet, !Ref X, 'Priv'], !Cidr [ !Sub "${VpcIP}/${VpcMask}", 8, !FindInMap [VpcCidr2Subnet, !Ref VpcMask, 'SubnetBits']]]
+          CidrBlock: !Select [!FindInMap [AZ2Subnet, !Ref X, 'Priv'], !Cidr [ !Ref VpcCIDR, 8, !FindInMap [VpcCidr2Subnet, !Select [1, !Split ['/', !Ref VpcCIDR]], 'SubnetBits']]]
           MapPublicIpOnLaunch: false
           Tags:
             - Key: Name
