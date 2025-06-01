@@ -183,11 +183,16 @@ Resources:
       ToPort: -1
       IpProtocol: -1
 
+  # Broken Network ACL for VPC Reachability Analyzer demo
+
   BrokenNetworkAcl:
     Type: AWS::EC2::NetworkAcl
     Condition: InsertBrokenNACL
     Properties:
       VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName} NACL with egress only rule'
 
   NACLEntry:
     Type: AWS::EC2::NetworkAclEntry
@@ -279,6 +284,8 @@ Resources:
             - Key: Name
               Value: !Sub '${AWS::StackName} private subnet-${X}'
 
+      # Attach broken NACL to private subnets for VPC Reachability Analyzer demo
+
       PrivBrokenNACL${X}:
         Type: AWS::EC2::SubnetNetworkAclAssociation
         Condition: InsertBrokenNACL
@@ -313,6 +320,9 @@ Resources:
           NatGatewayId: !Ref
             Fn::Sub: 'NatGw${X}'
 
+      # VPC Reachability Analyzer paths for demo
+
+      # Private subnets to Internet
       PathPriv2Inet${X}:
         Type: AWS::EC2::NetworkInsightsPath
         Properties:
@@ -324,8 +334,9 @@ Resources:
           Protocol: tcp
           Tags: 
             - Key: Name
-              Value: !Sub 'Path ${AWS::StackName} private subnet ${X} to internet'
+              Value: !Sub 'Path ${AWS::StackName} private subnet ${X} to Internet'
 
+      # Public subnets to Internet
       PathPub2Inet${X}:
         Type: AWS::EC2::NetworkInsightsPath
         Properties:
@@ -337,8 +348,9 @@ Resources:
           Protocol: tcp
           Tags: 
             - Key: Name
-              Value: !Sub 'Path ${AWS::StackName} public subnet ${X} to internet'
+              Value: !Sub 'Path ${AWS::StackName} public subnet ${X} to Internet'
 
+      # Public to private subnets (in the same availability zone)
       PathPub2Priv${X}:
         Type: AWS::EC2::NetworkInsightsPath
         Properties:
