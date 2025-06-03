@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: RDS Postgres v1.0
+Description: RDS Postgres v2.0
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -11,20 +11,18 @@ Metadata:
         Parameters:
           - DBName
           - SnapshotName
-          - MasterUsername
-          - MasterUserPassword
           - DBInstanceClass
           - DBStorage
           - MultiAZ
           - ReadReplica
           - DBVersion
-          - DBParamsStack
           - KMSEncryptionKey
       -
         Label:
           default: Network configuration
         Parameters:
-          - VPCStack
+          - VPCID
+          - Subnets
           - AppSecGroup
           - AllowAccess
       -
@@ -42,10 +40,6 @@ Metadata:
 
 Parameters:
 
-  DBParamsStack:
-    Type: String
-    Description: Stack with DB parameters (must export PARAMSID)
-
   ConfigureR53:
     Type: String
     Description: Configure domain for database (if yes you need to set Cname and R53HostedZoneName parameters)
@@ -60,6 +54,7 @@ Parameters:
   R53HostedZoneName:
     Type: String
     Description: Route53 hosted zone name e.g. domain.com (optional)
+    Default: ""
 
   DBName:
     Type: String
@@ -68,32 +63,14 @@ Parameters:
     MaxLength: 64
     AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
     ConstraintDescription: Must begin with a letter and contain 1-64 alphanumeric characters.
-    Default: MyDatabase
-
-  MasterUsername:
-    Type: String
-    Description: Database admin username
-    MinLength: 1
-    MaxLength: 63
-    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
-    ConstraintDescription: Must begin with a letter and contain 1-63 alphanumeric characters."
-    Default: master
-
-  MasterUserPassword:
-    Type: String
-    Description: Database admin account password
-    MinLength: 8
-    MaxLength: 40
-    AllowedPattern: "[a-zA-Z0-9]*"
-    ConstraintDescription: "Must contain 8-40 alphanumeric characters."
-    NoEcho: true
+    Default: "mydb"
 
   DBInstanceClass:
     Type: String
     Description: RDS instance type
     AllowedPattern: "db.*"
     ConstraintDescription: RDS instance type begins with db
-    Default: db.t2.medium
+    Default: db.t4g.medium
 
   DBStorage:
     Type: Number
@@ -116,16 +93,22 @@ Parameters:
     Type: String
     Description: Postgres version
     AllowedValues:
-      - "9.4"
-      - "9.5"
-      - "9.6"
-      - "10.1"
-      - "10.3"
-    Default: "9.6"
+      - "15.13"
+      - "16.9"
+      - "17.1"
+      - "17.2"
+      - "17.3"
+      - "17.4"
+      - "17.5"
+    Default: "17.5"
 
-  VPCStack:
-    Type: String
-    Description: Name of VPC Cloudformation stack
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC for deployment
+
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: VPC subnets for RDS database
 
   AppSecGroup:
     Type: String
@@ -152,6 +135,18 @@ Parameters:
     Description: KMS Key ARN for RDS encryption (leave empty to disable encryption)
     Default: ""
 
+Rules:
+  SubnetsInVPC:
+    Assertions:
+    - Assert:
+        Fn::EachMemberIn:
+        - Fn::ValueOf:
+          - Subnets
+          - VpcId
+        - 
+          - !Ref VPCID
+      AssertDescription: All subnets must within the VPC
+
 Conditions:
 
   AllowAppAccess: !Not [!Equals [!Ref AppSecGroup, "" ]]
@@ -160,7 +155,6 @@ Conditions:
   HasReplica: !Equals [!Ref ReadReplica, "true"]
   UseSnapshot: !Not [!Equals [!Ref SnapshotName, "" ]]
   HasDBDomain: !Equals [!Ref ConfigureR53, "true" ]
-  HasDBParamsStack: !Not [!Equals [!Ref DBParamsStack, "" ]]
   HasEncryption: !Not [!Equals [!Ref KMSEncryptionKey, "" ]]
 
 Resources:
@@ -171,33 +165,21 @@ Resources:
     Properties:
       DBInstanceIdentifier: !Ref AWS::StackName
       DBName:
-      - !If
-        - UseSnapshot
-        - !Ref AWS::NoValue
-        - !Ref DBName
+        !If [ UseSnapshot, !Ref "AWS::NoValue", !Ref DBName ]
       KmsKeyId:
-      - !If
-        - HasEncryption
-        - !Ref KMSEncryptionKey
-        - !Ref AWS::NoValue
+        !If [ HasEncryption, !Ref KMSEncryptionKey, !Ref "AWS::NoValue" ]
       StorageEncrypted:
-      - !If
-        - HasEncryption
-        - true
-        - !Ref AWS::NoValue
-      StorageType: gp2
+        !If [ HasEncryption, True, !Ref "AWS::NoValue" ]
+      StorageType: gp3
       AllocatedStorage: !Ref DBStorage
       DBInstanceClass: !Ref DBInstanceClass
       Engine: postgres
       EngineVersion: !Ref DBVersion
       MultiAZ: !Ref MultiAZ
-      MasterUsername: !Ref MasterUsername
-      MasterUserPassword: !Ref MasterUserPassword
-      DBParameterGroupName:
-      - !If
-        - HasDBParamsStack
-        - Fn::ImportValue: !Sub "${DBParamsStack}-ParamGroupId"
-        - !Ref MyRDSParamGroup
+      MasterUsername: "postgres"
+      ManageMasterUserPassword: True
+      EnableIAMDatabaseAuthentication: True
+      DBParameterGroupName: !Ref MyRDSParamGroup
       VPCSecurityGroups:
         - !Ref MySecGroup
         - !Ref MyExtSecGroup
@@ -205,10 +187,7 @@ Resources:
       BackupRetentionPeriod: 30
       CopyTagsToSnapshot: true
       DBSnapshotIdentifier:
-      - !If
-        - UseSnapshot
-        - !Ref SnapshotName
-        - !Ref AWS::NoValue
+        !If [ UseSnapshot, !Ref SnapshotName, !Ref "AWS::NoValue" ]
       Tags:
         - Key: Name
           Value: !Ref AWS::StackName
@@ -228,16 +207,13 @@ Resources:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: !Sub "${AWS::StackName} database subnet group"
-      SubnetIds: !Split
-        - ','
-        - Fn::ImportValue: !Sub "${VPCStack}-PrivSubnets"
+      SubnetIds: !Ref Subnets
 
   MySecGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: !Sub "${AWS::StackName} RDS security group"
-      VpcId:
-        Fn::ImportValue: !Sub "${VPCStack}-VpcId"
+      VpcId: !Ref VPCID
 
   MySecGroupRuleInternal:
     Type: AWS::EC2::SecurityGroupIngress
@@ -253,8 +229,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: !Sub "${AWS::StackName} RDS security group for external access"
-      VpcId:
-        Fn::ImportValue: !Sub "${VPCStack}-VpcId"
+      VpcId: !Ref VPCID
 
   MySecGroupRuleApplication:
     Type: AWS::EC2::SecurityGroupIngress
@@ -280,7 +255,9 @@ Resources:
   MyRDSParamGroup:
     Type: AWS::RDS::DBParameterGroup
     Properties:
-      Family: !Sub "postgres${DBVersion}"
+      Family: !Sub
+        - "postgres${majorversion}"
+        - majorversion: !Select [ 0, !Split [ ".", !Ref DBVersion ] ]
       Description: !Sub "${AWS::StackName} PostgreSQL ${DBVersion} database parameter group"
 
   AlertHighCPU:
