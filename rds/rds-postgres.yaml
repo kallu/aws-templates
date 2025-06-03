@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: RDS Postgres v2.0
+Description: RDS Postgres
 
 Metadata:
   AWS::CloudFormation::Interface:
